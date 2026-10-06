@@ -21,15 +21,34 @@ Install either one or both. Inside a session, `/plugin marketplace add li-techno
 
 ## Updates
 
-Auto-update is **off** by default for marketplaces outside Anthropic. To turn it on: `/plugin` → **Marketplaces** → **li-technologies** → **Enable auto-update**. Claude Code then checks for new versions in the background after a session starts.
+Each plugin's version only changes when there is something new, and an update reaches you only through a new version.
 
-To update by hand:
+### Turn on auto-update (recommended)
 
-```bash
-claude plugin marketplace update li-technologies
-claude plugin update spinner-quips@li-technologies
-claude plugin update hamster-saga@li-technologies
-```
+Auto-update is **off** by default for marketplaces outside Anthropic, and a marketplace cannot switch it on for you. Turn it on once and Claude Code checks for new versions in the background after a session starts.
+
+- **Settings file** (works everywhere, including the desktop app): after installing, run
+
+  ```bash
+  jq '.extraKnownMarketplaces["li-technologies"].autoUpdate = true' ~/.claude/settings.json > ~/.claude/settings.json.tmp && mv ~/.claude/settings.json.tmp ~/.claude/settings.json
+  ```
+
+  or simply ask Claude: *"turn on auto-update for the li-technologies plugin marketplace"*. Either way the `li-technologies` entry under `extraKnownMarketplaces` in `~/.claude/settings.json` gets `"autoUpdate": true`.
+- **Terminal**: `/plugin` → **Marketplaces** → **li-technologies** → **Enable auto-update**.
+- **Organisations** can set the same `autoUpdate` key in managed settings for everyone.
+
+The desktop app has no auto-update switch, so use the settings file there.
+
+### Update by hand
+
+- **Desktop app**: **Plugins** → **Manage marketplaces** → **Check for updates** next to li-technologies, then open the plugin and press **Update**.
+- **Terminal**:
+
+  ```bash
+  claude plugin marketplace update li-technologies
+  claude plugin update spinner-quips@li-technologies
+  claude plugin update hamster-saga@li-technologies
+  ```
 
 Then start a new session or run `/reload-plugins`.
 
