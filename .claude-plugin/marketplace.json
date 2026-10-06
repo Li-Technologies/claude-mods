@@ -1,0 +1,17 @@
+{
+  "name": "li-technologies",
+  "owner": { "name": "Michał Lisowski", "email": "michal.lisowski@litechnologies.eu" },
+  "metadata": { "description": "Small mods for Claude Code: spinner humour and a hamster with a career" },
+  "plugins": [
+    {
+      "name": "spinner-quips",
+      "source": "./plugins/spinner-quips",
+      "description": "Replaces the spinner's generic 'Working' with a short funny phrase that fits the task at hand"
+    },
+    {
+      "name": "hamster-saga",
+      "source": "./plugins/hamster-saga",
+      "description": "Now and then a spinner tells the next chapter of a hamster's long, eventful saga"
+    }
+  ]
+}

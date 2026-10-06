@@ -1,0 +1,1 @@
+{ "name": "spinner-quips", "version": "1.0.0", "author": { "name": "Michał Lisowski", "email": "michal.lisowski@litechnologies.eu" }, "license": "CC-BY-NC-ND-4.0", "description": "Replaces the spinner's generic 'Working' with a short funny phrase that fits the task at hand" }
