@@ -285,7 +285,7 @@ type Progress = {
   index: number
   // A reset's line, shown before the season starts over.
   pending: string | null
-  // The chapter shows at once, outside the pacing: where /hamster-travel landed.
+  // The chapter shows at once, outside the pacing: where /hamster-saga:travel landed.
   now: boolean
   // Each season this hamster had sent back by its phrase, once per time: SEASON_RESETS each at most, or an everyday word
   // could loop one forever.
@@ -484,7 +484,7 @@ function promptToast(before: Progress, after: Progress | null, book: readonly Se
   return { text: (after.pending !== null ? TOAST.rewound : TOAST.locked).replaceAll('{season}', season), timeoutMs: SHORT_TOAST }
 }
 
-// `/hamster-travel` lands on a chapter number of this hamster's storyline (1-based), a `season:chapter` pair, or a
+// `/hamster-saga:travel` lands on a chapter number of this hamster's storyline (1-based), a `season:chapter` pair, or a
 // season by its key or title; null when the target is not there.
 function travelled(progress: Progress, args: string, book: readonly Season[] = SEASONS): Progress | null {
   const line = storyline(progress.generation, book)
@@ -506,7 +506,7 @@ function travelled(progress: Progress, args: string, book: readonly Season[] = S
   return { ...at(progress.generation, index, book, progress.spent, bucketOf(progress)), now: true }
 }
 
-// `/hamster-status`: where the saga stands, when the next chapter is due, and the resets used.
+// `/hamster-saga:status`: where the saga stands, when the next chapter is due, and the resets used.
 function described(progress: Progress, now: number, previewing: boolean, book: readonly Season[] = SEASONS): string {
   const line = storyline(progress.generation, book)
   const index = locate(progress, book)
@@ -527,7 +527,7 @@ function described(progress: Progress, now: number, previewing: boolean, book: r
     `Hamster ${roman(progress.generation)}: ${place} (${index + 1}/${line.length} of this hamster's saga).`,
     `Next: "${chapterOf(progress, book).text}", ${isDue(progress, now, book) ? 'due now' : `due in about ${Math.ceil(minutes)} min`}; the bucket holds ${left.toFixed(1)}.`,
     `Season resets used: ${resets.join(', ')}.`,
-    previewing ? 'Preview (/hamster-debug) is on: spinners show the preview, the saga itself waits.' : 'Preview (/hamster-debug) is off.',
+    previewing ? 'Preview (/hamster-saga:debug) is on: spinners show the preview, the saga itself waits.' : 'Preview (/hamster-saga:debug) is off.',
   ].join('\n')
 }
 
@@ -568,26 +568,15 @@ export const register: Register = on => {
     return { value: progress?.index ?? -1 }
   })
 
-  on('session.start', async ($, e, next) => {
-    await $.command.register({
-      name: 'hamster-travel',
-      description: 'Jump the hamster saga: a chapter number, season:chapter, or a season name',
-      argumentHint: '[chapter | season:chapter | season]',
-    })
-    await $.command.register({ name: 'hamster-reset', description: 'Start the hamster saga over: Hamster I, chapter 1' })
-    await $.command.register({ name: 'hamster-debug', description: 'Toggle a preview: every spinner shows the next chapter; the saga itself does not move' })
-    await $.command.register({ name: 'hamster-status', description: "Show where the hamster saga stands and when the next chapter is due" })
-    return next(e)
-  })
-
+  // The commands are the files in `commands/`, so the menu lists them from the start; these hooks answer them.
   // While the preview is on it travels the preview, which is what the spinners show; the saga itself stays put.
-  on('command.run', { command: 'hamster-travel' }, async ($, e) => {
+  on('command.run', { command: 'hamster-saga:travel' }, async ($, e) => {
     const key = (await $.store.get('preview')) ? 'preview' : 'progress'
     const progress = asProgress(await $.store.get(key))
     const landed = travelled(progress, e.args)
     if (!landed) {
       const keys = SEASONS.map(season => (season.chapters[0]?.[0] ?? '').split('-')[0]).join(', ')
-      return { text: `Usage: /hamster-travel <chapter 1-${storyline(progress.generation).length}> | <season>:<chapter> | <${keys}>` }
+      return { text: `Usage: /hamster-saga:travel <chapter 1-${storyline(progress.generation).length}> | <season>:<chapter> | <${keys}>` }
     }
     await $.store.set(key, landed)
     soloCurrent = null
@@ -595,7 +584,7 @@ export const register: Register = on => {
     return { text: `${where} to "${chapterOf(landed).text}"; it shows on the next spinner.` }
   })
 
-  on('command.run', { command: 'hamster-reset' }, async ($, e) => {
+  on('command.run', { command: 'hamster-saga:reset' }, async ($, e) => {
     const was = described(asProgress(await $.store.get('progress')), await $.clock.now(), false)
     await $.store.set('progress', START)
     await $.store.delete('preview')
@@ -603,7 +592,7 @@ export const register: Register = on => {
     return { text: `The saga starts over with Hamster I, chapter 1.\nIt stood at: ${was.split('\n')[0]}` }
   })
 
-  on('command.run', { command: 'hamster-debug' }, async ($, e) => {
+  on('command.run', { command: 'hamster-saga:debug' }, async ($, e) => {
     soloCurrent = null
     // A chapter already on screen moves on where it came from before the switch, or it would show twice.
     if (soloShown !== null) {
@@ -620,10 +609,10 @@ export const register: Register = on => {
     }
     const progress = asProgress(await $.store.get('progress'))
     await $.store.set('preview', { ...progress, pending: null, now: false })
-    return { text: `Preview on: every spinner shows the next chapter from "${chapterOf({ ...progress, pending: null }).text}". The saga itself stays put; /hamster-debug again to stop.` }
+    return { text: `Preview on: every spinner shows the next chapter from "${chapterOf({ ...progress, pending: null }).text}". The saga itself stays put; /hamster-saga:debug again to stop.` }
   })
 
-  on('command.run', { command: 'hamster-status' }, async ($, e) => {
+  on('command.run', { command: 'hamster-saga:status' }, async ($, e) => {
     const previewing = Boolean(await $.store.get('preview'))
     return { text: described(asProgress(await $.store.get('progress')), await $.clock.now(), previewing) }
   })

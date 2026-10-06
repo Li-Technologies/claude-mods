@@ -46,7 +46,7 @@ A hamster joins the team. What happens next is told one spinner at a time, a cha
 - Works on its own: an occasional spinner shows the next chapter.
 - With **spinner-quips** installed too, the saga takes a slot in the quip rotation instead.
 - Progress is kept between sessions.
-- `/hamster-status` shows where the story stands. The other `/hamster-…` commands are there if you want to peek, but the story is better unspoiled.
+- `/hamster-saga:status` shows where the story stands. The other `/hamster-saga:…` commands are there if you want to peek, but the story is better unspoiled.
 
 ## Versioning
 
