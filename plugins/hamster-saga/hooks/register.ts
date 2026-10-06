@@ -569,7 +569,11 @@ export const register: Register = on => {
   })
 
   on('session.start', async ($, e, next) => {
-    await $.command.register({ name: 'hamster-travel', description: 'Jump the hamster saga: a chapter number, season:chapter, or a season name' })
+    await $.command.register({
+      name: 'hamster-travel',
+      description: 'Jump the hamster saga: a chapter number, season:chapter, or a season name',
+      argumentHint: '[chapter | season:chapter | season]',
+    })
     await $.command.register({ name: 'hamster-reset', description: 'Start the hamster saga over: Hamster I, chapter 1' })
     await $.command.register({ name: 'hamster-debug', description: 'Toggle a preview: every spinner shows the next chapter; the saga itself does not move' })
     await $.command.register({ name: 'hamster-status', description: "Show where the hamster saga stands and when the next chapter is due" })
