@@ -5,7 +5,7 @@ Small mods for [Claude Code](https://claude.com/claude-code), published as the `
 | Plugin | What it does |
 | --- | --- |
 | **spinner-quips** | Replaces the spinner's generic "Working" with a short funny phrase that fits what Claude is doing: reading, implementing, debugging, designing, writing or planning. |
-| **hamster-saga** | Now and then a spinner tells the next chapter of a hamster's long and eventful saga. |
+| **hamster-saga** | Now and then a spinner tells the next episode of a hamster's long and eventful saga. |
 
 Both are function-hook plugins: they run inside Claude Code itself, in the terminal and in the desktop app's Code tab. Built and tested on Claude Code 2.1.289.
 
@@ -60,9 +60,9 @@ Then start a new session or run `/reload-plugins`.
 
 ## hamster-saga
 
-A hamster joins the team. What happens next is told one spinner at a time, a chapter every so often, so the story unfolds over weeks rather than minutes. No spoilers here.
+A hamster joins the team. What happens next is told one spinner at a time, an episode every so often, so the story unfolds over weeks rather than minutes. No spoilers here.
 
-- Works on its own: an occasional spinner shows the next chapter.
+- Works on its own: an occasional spinner shows the next episode.
 - With **spinner-quips** installed too, the saga takes a slot in the quip rotation instead.
 - Progress is kept between sessions.
 - `/hamster-saga:status` shows where the story stands. The other `/hamster-saga:…` commands are there if you want to peek, but the story is better unspoiled.
@@ -73,7 +73,7 @@ Each plugin follows semantic versioning in its `plugin.json`; an update reaches 
 
 | Bump | spinner-quips | hamster-saga |
 | --- | --- | --- |
-| patch `x.y.Z` | quip text changes, new quips | small fixes, chapter text tweaks |
+| patch `x.y.Z` | quip text changes, new quips | small fixes, episode text tweaks |
 | minor `x.Y.0` | new categories, small behaviour changes | new seasons and new content |
 | major `X.0.0` | behaviour changes, e.g. drawing something new | behaviour changes, e.g. drawing something new |
 

@@ -26,7 +26,7 @@
       "name": "hamster-saga",
       "displayName": "Hamster Saga",
       "source": "hamster-saga",
-      "description": "Now and then a spinner tells the next chapter of a hamster's long, eventful saga",
+      "description": "Now and then a spinner tells the next episode of a hamster's long, eventful saga",
       "author": { "name": "Michał Lisowski", "email": "michal.lisowski@litechnologies.eu" },
       "homepage": "https://github.com/Li-Technologies/claude-mods#hamster-saga",
       "repository": "https://github.com/Li-Technologies/claude-mods",

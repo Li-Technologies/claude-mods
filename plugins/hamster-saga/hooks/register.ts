@@ -1,27 +1,27 @@
 import type { Register } from 'claude-code'
-import type { HamsterChapter } from '../types'
+import type { HamsterEpisode } from '../types'
 
 // `{h}` is the hamster in running text ("the hamster", then "Hamster II"); `{H}` the same as a proper name
 // ("the Hamster"); `{N}` its bare name, to open a line ("Hamster", then "Hamster II").
 //
-// Progress is kept by chapter id, so the book can grow and its texts change without losing anyone's place:
-// an id never changes and is never reused; a new chapter, anywhere, takes a new one (`lotr-08a` between 08 and 09).
-// A chapter added before the current one waits for the next hamster; one added after it comes up as usual.
-type Chapter = readonly [id: string, text: string]
+// Progress is kept by episode id, so the book can grow and its texts change without losing anyone's place:
+// an id never changes and is never reused; a new episode, anywhere, takes a new one (`lotr-08a` between 08 and 09).
+// An episode added before the current one waits for the next hamster; one added after it comes up as usual.
+type Episode = readonly [id: string, text: string]
 
 type Season = {
   title: string
-  // A phrase in a prompt that sends the season back to its first chapter, and what the spinner says then.
+  // A phrase in a prompt that sends the season back to its first episode, and what the spinner says then.
   reset?: { phrase: RegExp; text: string }
-  // The toast once the season's first chapter has been on screen; none for the first season, to keep it a surprise.
+  // The toast once the season's first episode has been on screen; none for the first season, to keep it a surprise.
   opening?: string
-  chapters: readonly Chapter[]
+  episodes: readonly Episode[]
 }
 
 const SEASONS: readonly Season[] = [
   {
     title: 'The career',
-    chapters: [
+    episodes: [
       // Recruitment
       ['career-01', 'Bribing {h}'],
       ['career-02', 'Bribing {h} again'],
@@ -65,7 +65,7 @@ const SEASONS: readonly Season[] = [
       phrase: /shall not pass|won'?t pass|nie przejdzie(?:sz)?(?!\p{L})/iu,
       text: 'Falling back to the Shire',
     },
-    chapters: [
+    episodes: [
       // The Hobbit (Third Age 2941)
       ['lotr-01', "Hosting thirteen dwarves in {h}'s hole"],
       ['lotr-02', "Signing {h}'s burglar contract"],
@@ -106,7 +106,7 @@ const SEASONS: readonly Season[] = [
       phrase: /(?<!\p{L})traps?(?!\p{L})|pu[łl]apk\p{L}*|force[ -]push|dark side|ciemn\p{L}* stron\p{L}*/iu,
       text: 'Retreating to Hoth',
     },
-    chapters: [
+    episodes: [
       // Episode I
       ['starwars-01', 'Finding {h}'],
       ['starwars-02', "Measuring {h}'s midi-chlorians"],
@@ -166,7 +166,7 @@ const SEASONS: readonly Season[] = [
       phrase: /(?<!\p{L})(?:race conditions?|wy[śs]cig\p{L}*|nitro|szybciej|faster|famil(?:y|ies)|rodzin\p{L}*|i don'?t have friends|nie mam przyjaci[óo][łl])(?!\p{L})/iu,
       text: 'Explaining {h} has family',
     },
-    chapters: [
+    episodes: [
       // The street-racing roots
       ['furious-01', 'Handing {h} a cold Corona'],
       ['furious-02', 'Street racing {h} at midnight'],
@@ -203,7 +203,7 @@ const SEASONS: readonly Season[] = [
       phrase: /time travel|back in time|podr[óo][żz]\p{L}* w czasie|(?:back to|in) the future|(?:powr[óo]t do|w) przysz[łl]o[śs]ci|(?<!\p{L})(?:rollback\p{L}*|roll back|cofnij si[ęe]|cofn[aą][ćc] si[ęe])(?!\p{L})/iu,
       text: "Rewriting {h}'s timeline",
     },
-    chapters: [
+    episodes: [
       // Part I
       ['bttf-01', 'Borrowing plutonium for {h}'],
       ['bttf-02', 'Letting {h} into the DeLorean'],
@@ -237,9 +237,9 @@ const SEASONS: readonly Season[] = [
   },
 ]
 
-// The last chapter of every generation; the next one opens with the new hamster's hiring.
-const FINALE: Chapter = ['finale', 'Sending {h} back to where it all began']
-const HIRING: Chapter = ['hiring', 'Hiring {H}']
+// The last episode of every generation; the next one opens with the new hamster's hiring.
+const FINALE: Episode = ['finale', 'Sending {h} back to where it all began']
+const HIRING: Episode = ['hiring', 'Hiring {H}']
 
 // Any season, any time: the hamster is let go and the next one starts the saga over from its hiring.
 const FIRE = { phrase: /fire the hamster|zwolnij chomika|wywal chomika/i, text: 'Firing {h}' }
@@ -265,10 +265,10 @@ type Toast = { text: string; timeoutMs: number }
 // How many times one hamster can have one season sent back by its phrase.
 const SEASON_RESETS = 2
 
-// How often a spinner shows a due chapter while no other mod shows them.
+// How often a spinner shows a due episode while no other mod shows them.
 const SOLO_ODDS = 10
 
-// About one season a week, however much or little one works: chapters are paid from a bucket that refills at the current
+// About one season a week, however much or little one works: episodes are paid from a bucket that refills at the current
 // season's length per week, nights and weekends included, and holds up to BURST_DAYS of that, so a Monday catches up on
 // the weekend; MIN_GAP apart at the closest, so catching up never comes as a burst.
 const WEEK = 7 * 24 * 60 * 60 * 1000
@@ -280,17 +280,19 @@ const GENERIC = 'Working'
 
 type Progress = {
   generation: number
-  // The id of the chapter to show next, and where it stood: the place to resume from once that id is gone from the book.
-  chapter: string
+  // The id of the episode to show next, and where it stood: the place to resume from once that id is gone from the book.
+  episode: string
   index: number
+  // Episodes this hamster has been through before this one: its own count, which an episode added behind it never shifts.
+  seen: number
   // A reset's line, shown before the season starts over.
   pending: string | null
-  // The chapter shows at once, outside the pacing: where /hamster-saga:travel landed.
+  // The episode shows at once, outside the pacing: where /hamster-saga:travel landed.
   now: boolean
   // Each season this hamster had sent back by its phrase, once per time: SEASON_RESETS each at most, or an everyday word
   // could loop one forever.
   spent: readonly number[]
-  // The pacing bucket: chapters it held at `tokensAt` (ms since the epoch).
+  // The pacing bucket: episodes it held at `tokensAt` (ms since the epoch).
   tokens: number
   tokensAt: number
 }
@@ -302,7 +304,7 @@ type Entry = {
   season: number | null
 }
 
-// Set once another mod draws the chapters (it called the noun); module state, so a reload clears it until the next call.
+// Set once another mod draws the episodes (it called the noun); module state, so a reload clears it until the next call.
 let attached = false
 let soloCurrent: string | false | null = null
 let soloShown: string | null = null
@@ -330,35 +332,35 @@ function named(text: string, generation: number): string {
   return text.replaceAll('{N}', bare).replaceAll('{H}', proper).replaceAll('{h}', plain)
 }
 
-// One generation's chapters in order: the hiring (from the second hamster on), every season, the finale.
+// One generation's episodes in order: the hiring (from the second hamster on), every season, the finale.
 function storyline(generation: number, book: readonly Season[] = SEASONS): readonly Entry[] {
-  const entry = ([id, text]: Chapter, season: number | null): Entry => ({ id, text, season })
+  const entry = ([id, text]: Episode, season: number | null): Entry => ({ id, text, season })
   return [
     ...(generation > 1 ? [entry(HIRING, null)] : []),
-    ...book.flatMap((season, index) => season.chapters.map(chapter => entry(chapter, index))),
+    ...book.flatMap((season, index) => season.episodes.map(episode => entry(episode, index))),
     entry(FINALE, null),
   ]
 }
 
-const START: Progress = { generation: 1, chapter: (SEASONS[0]?.chapters[0] ?? FINALE)[0], index: 0, pending: null, now: false, spent: [], tokens: 0, tokensAt: 0 }
+const START: Progress = { generation: 1, episode: (SEASONS[0]?.episodes[0] ?? FINALE)[0], index: 0, seen: 0, pending: null, now: false, spent: [], tokens: 0, tokensAt: 0 }
 
-// Where the saga stands in the book as it is now: its chapter by id, or, when that one was removed, its old place.
+// Where the saga stands in the book as it is now: its episode by id, or, when that one was removed, its old place.
 function locate(progress: Progress, book: readonly Season[]): number {
   const line = storyline(progress.generation, book)
-  const found = line.findIndex(entry => entry.id === progress.chapter)
+  const found = line.findIndex(entry => entry.id === progress.episode)
   return found >= 0 ? found : Math.min(progress.index, line.length - 1)
 }
 
 function at(generation: number, index: number, book: readonly Season[], spent: readonly number[] = [], bucket = { tokens: 0, tokensAt: 0 }): Progress {
   const line = storyline(generation, book)
-  return { generation, chapter: (line[index] ?? line[line.length - 1] as Entry).id, index, pending: null, now: false, spent, ...bucket }
+  return { generation, episode: (line[index] ?? line[line.length - 1] as Entry).id, index, seen: index, pending: null, now: false, spent, ...bucket }
 }
 
 function bucketOf(progress: Progress): { tokens: number; tokensAt: number } {
   return { tokens: progress.tokens, tokensAt: progress.tokensAt }
 }
 
-// What the store holds, read leniently; a position-only record from the first build is mapped onto ids once.
+// What the store holds, read leniently; a record without an episode id resumes at its place and is mapped onto ids once.
 function asProgress(value: unknown, book: readonly Season[] = SEASONS): Progress {
   if (!value || typeof value !== 'object') {
     return START
@@ -373,13 +375,14 @@ function asProgress(value: unknown, book: readonly Season[] = SEASONS): Progress
     tokens: typeof raw.tokens === 'number' ? Math.max(raw.tokens, 0) : 0,
     tokensAt: typeof raw.tokensAt === 'number' ? raw.tokensAt : 0,
   }
-  if (typeof raw.chapter !== 'string') {
+  if (typeof raw.episode !== 'string') {
     return { ...at(generation, Math.min(index, storyline(generation, book).length - 1), book, spent, bucket), pending }
   }
-  return { generation, chapter: raw.chapter, index, pending, now: raw.now === true, spent, ...bucket }
+  const seen = typeof raw.seen === 'number' ? Math.max(0, Math.floor(raw.seen)) : index
+  return { generation, episode: raw.episode, index, seen, pending, now: raw.now === true, spent, ...bucket }
 }
 
-function chapterOf(progress: Progress, book: readonly Season[] = SEASONS): HamsterChapter {
+function episodeOf(progress: Progress, book: readonly Season[] = SEASONS): HamsterEpisode {
   if (progress.pending !== null) {
     return { text: progress.pending, urgent: true }
   }
@@ -395,12 +398,12 @@ function seasonOf(progress: Progress, book: readonly Season[]): number {
 
 // What the bucket holds `now`: refilled since `tokensAt` at the season's length per week, up to BURST_DAYS of that.
 function available(progress: Progress, now: number, book: readonly Season[]): number {
-  const perWeek = book[seasonOf(progress, book)]?.chapters.length ?? 1
+  const perWeek = book[seasonOf(progress, book)]?.episodes.length ?? 1
   const capacity = Math.max(1, (perWeek * BURST_DAYS) / 7)
   return Math.min(capacity, progress.tokens + (Math.max(0, now - progress.tokensAt) * perWeek) / WEEK)
 }
 
-// Whether the next chapter may show `now`: a reset's line always, any other while the bucket holds one and the last
+// Whether the next episode may show `now`: a reset's line always, any other while the bucket holds one and the last
 // was MIN_GAP ago.
 function isDue(progress: Progress, now: number, book: readonly Season[] = SEASONS): boolean {
   return progress.pending !== null || progress.now || (available(progress, now, book) >= 1 && now - progress.tokensAt >= MIN_GAP)
@@ -409,18 +412,18 @@ function isDue(progress: Progress, now: number, book: readonly Season[] = SEASON
 function advanced(progress: Progress, book: readonly Season[] = SEASONS): Progress {
   const index = locate(progress, book)
   if (progress.pending !== null) {
-    return at(progress.generation, index, book, progress.spent, bucketOf(progress))
+    return { ...at(progress.generation, index, book, progress.spent, bucketOf(progress)), seen: progress.seen }
   }
   if (index + 1 < storyline(progress.generation, book).length) {
-    return at(progress.generation, index + 1, book, progress.spent, bucketOf(progress))
+    return { ...at(progress.generation, index + 1, book, progress.spent, bucketOf(progress)), seen: progress.seen + 1 }
   }
   return at(progress.generation + 1, 0, book, [], bucketOf(progress))
 }
 
 // Past `shown` once it has been on screen at `now`; null when the saga already stands elsewhere (moved on, or reset meanwhile).
-// A chapter shown takes one from the bucket; a reset's line and a travel's landing are free.
+// An episode shown takes one from the bucket; a reset's line and a travel's landing are free.
 function movedOn(progress: Progress, shown: string, book: readonly Season[] = SEASONS, now = 0): Progress | null {
-  if (chapterOf(progress, book).text !== shown) {
+  if (episodeOf(progress, book).text !== shown) {
     return null
   }
   const left = available(progress, now, book) - (progress.pending === null && !progress.now ? 1 : 0)
@@ -437,7 +440,7 @@ function afterPrompt(progress: Progress, text: string, book: readonly Season[] =
   const line = storyline(progress.generation, book)
   const index = seasonOf(progress, book)
   const season = book[index] as Season
-  const first = season.chapters[0]
+  const first = season.episodes[0]
   const used = progress.spent.filter(spent => spent === index).length
   if (!season.reset?.phrase.test(text) || !first || used > SEASON_RESETS) {
     return null
@@ -447,14 +450,15 @@ function afterPrompt(progress: Progress, text: string, book: readonly Season[] =
     return { ...progress, spent: [...progress.spent, index] }
   }
   const start = line.findIndex(other => other.id === first[0])
-  return { ...at(progress.generation, start, book, [...progress.spent, index], bucketOf(progress)), pending: named(season.reset.text, progress.generation) }
+  const seen = Math.max(0, progress.seen - (locate(progress, book) - start))
+  return { ...at(progress.generation, start, book, [...progress.spent, index], bucketOf(progress)), seen, pending: named(season.reset.text, progress.generation) }
 }
 
 function hamsterName(generation: number): string {
   return `Hamster ${roman(generation)}`
 }
 
-// The toast for a chapter that has just been on screen: a season's opening, the finale, or a new hamster's hiring.
+// The toast for an episode that has just been on screen: a season's opening, the finale, or a new hamster's hiring.
 function shownToast(progress: Progress, book: readonly Season[] = SEASONS): Toast | null {
   if (progress.pending !== null) {
     return null
@@ -469,7 +473,7 @@ function shownToast(progress: Progress, book: readonly Season[] = SEASONS): Toas
     return { text, timeoutMs: milestone ? LONG_TOAST : SHORT_TOAST }
   }
   const season = entry.season === null ? undefined : book[entry.season]
-  return season?.opening && season.chapters[0]?.[0] === entry.id ? { text: season.opening, timeoutMs: LONG_TOAST } : null
+  return season?.opening && season.episodes[0]?.[0] === entry.id ? { text: season.opening, timeoutMs: LONG_TOAST } : null
 }
 
 // The toast for what a prompt did to the saga (afterPrompt's result): a firing, a season rewound, or out of rewrites.
@@ -484,7 +488,7 @@ function promptToast(before: Progress, after: Progress | null, book: readonly Se
   return { text: (after.pending !== null ? TOAST.rewound : TOAST.locked).replaceAll('{season}', season), timeoutMs: SHORT_TOAST }
 }
 
-// `/hamster-saga:travel` lands on a chapter number of this hamster's storyline (1-based), a `season:chapter` pair, or a
+// `/hamster-saga:travel` lands on an episode number of this hamster's storyline (1-based), a `season:episode` pair, or a
 // season by its key or title; null when the target is not there.
 function travelled(progress: Progress, args: string, book: readonly Season[] = SEASONS): Progress | null {
   const line = storyline(progress.generation, book)
@@ -494,19 +498,20 @@ function travelled(progress: Progress, args: string, book: readonly Season[] = S
   if (/^\d+$/.test(arg)) {
     index = Number(arg) - 1
   } else if (pair) {
-    const chapter = book[Number(pair[1]) - 1]?.chapters[Number(pair[2]) - 1]
-    index = chapter ? line.findIndex(entry => entry.id === chapter[0]) : -1
+    const episode = book[Number(pair[1]) - 1]?.episodes[Number(pair[2]) - 1]
+    index = episode ? line.findIndex(entry => entry.id === episode[0]) : -1
   } else if (arg !== '') {
-    const first = book.find(season => (season.chapters[0]?.[0] ?? '').startsWith(`${arg}-`) || season.title.toLowerCase().includes(arg))?.chapters[0]
+    const first = book.find(season => (season.episodes[0]?.[0] ?? '').startsWith(`${arg}-`) || season.title.toLowerCase().includes(arg))?.episodes[0]
     index = first ? line.findIndex(entry => entry.id === first[0]) : -1
   }
   if (index < 0 || index >= line.length) {
     return null
   }
-  return { ...at(progress.generation, index, book, progress.spent, bucketOf(progress)), now: true }
+  const seen = Math.max(0, progress.seen + index - locate(progress, book))
+  return { ...at(progress.generation, index, book, progress.spent, bucketOf(progress)), seen, now: true }
 }
 
-// `/hamster-saga:status`: where the saga stands, when the next chapter is due, and the resets used.
+// `/hamster-saga:status`: where the saga stands and when the next episode is due.
 function described(progress: Progress, now: number, previewing: boolean, book: readonly Season[] = SEASONS): string {
   const line = storyline(progress.generation, book)
   const index = locate(progress, book)
@@ -516,18 +521,14 @@ function described(progress: Progress, now: number, previewing: boolean, book: r
   const place =
     entry.season === null
       ? entry.id === HIRING[0] ? 'the hiring' : 'the finale'
-      : `season ${seasonIndex + 1} "${season.title}", chapter ${season.chapters.findIndex(chapter => chapter[0] === entry.id) + 1}/${season.chapters.length}`
-  const perWeek = season.chapters.length
+      : `Season ${seasonIndex + 1} "${season.title}", Episode ${season.episodes.findIndex(episode => episode[0] === entry.id) + 1}/${season.episodes.length}`
+  const perWeek = season.episodes.length
   const left = available(progress, now, book)
   const minutes = Math.max(((1 - left) * WEEK) / perWeek, MIN_GAP - (now - progress.tokensAt), 0) / 60000
-  const resets = book
-    .map((other, i) => (other.reset ? `${other.title} ${progress.spent.filter(spent => spent === i).length}/${SEASON_RESETS}` : null))
-    .filter(text => text !== null)
   return [
-    `Hamster ${roman(progress.generation)}: ${place} (${index + 1}/${line.length} of this hamster's saga).`,
-    `Next: "${chapterOf(progress, book).text}", ${isDue(progress, now, book) ? 'due now' : `due in about ${Math.ceil(minutes)} min`}; the bucket holds ${left.toFixed(1)}.`,
-    `Season resets used: ${resets.join(', ')}.`,
-    previewing ? 'Preview (/hamster-saga:debug) is on: spinners show the preview, the saga itself waits.' : 'Preview (/hamster-saga:debug) is off.',
+    `Hamster ${roman(progress.generation)}: ${place} (${progress.seen + 1}/${progress.seen + line.length - index} of this hamster's saga).`,
+    `Next episode due ${isDue(progress, now, book) ? 'now' : `in about ${Math.ceil(minutes)} min`}.`,
+    previewing ? 'Preview is on.' : 'Preview is off.',
   ].join('\n')
 }
 
@@ -544,15 +545,15 @@ export const register: Register = on => {
     }
   })
 
-  // An empty text while the next chapter is not due yet: the caller shows something else.
+  // An empty text while the next episode is not due yet: the caller shows something else.
   on('hamster.peek', async ($, e, next) => {
     attached = true
     const preview = await $.store.get('preview')
     if (preview) {
-      return { value: { text: chapterOf(asProgress(preview)).text, urgent: true } }
+      return { value: { text: episodeOf(asProgress(preview)).text, urgent: true } }
     }
     const progress = asProgress(await $.store.get('progress'))
-    return { value: isDue(progress, await $.clock.now()) ? chapterOf(progress) : { text: '', urgent: false } }
+    return { value: isDue(progress, await $.clock.now()) ? episodeOf(progress) : { text: '', urgent: false } }
   })
 
   on('hamster.advance', async ($, e, next) => {
@@ -575,13 +576,13 @@ export const register: Register = on => {
     const progress = asProgress(await $.store.get(key))
     const landed = travelled(progress, e.args)
     if (!landed) {
-      const keys = SEASONS.map(season => (season.chapters[0]?.[0] ?? '').split('-')[0]).join(', ')
-      return { text: `Usage: /hamster-saga:travel <chapter 1-${storyline(progress.generation).length}> | <season>:<chapter> | <${keys}>` }
+      const keys = SEASONS.map(season => (season.episodes[0]?.[0] ?? '').split('-')[0]).join(', ')
+      return { text: `Usage: /hamster-saga:travel <episode 1-${storyline(progress.generation).length}> | <season>:<episode> | <${keys}>` }
     }
     await $.store.set(key, landed)
     soloCurrent = null
     const where = key === 'preview' ? 'The preview travels' : 'The hamster travels'
-    return { text: `${where} to "${chapterOf(landed).text}"; it shows on the next spinner.` }
+    return { text: `${where} to "${episodeOf(landed).text}"; it shows on the next spinner.` }
   })
 
   on('command.run', { command: 'hamster-saga:reset' }, async ($, e) => {
@@ -589,12 +590,12 @@ export const register: Register = on => {
     await $.store.set('progress', START)
     await $.store.delete('preview')
     soloCurrent = null
-    return { text: `The saga starts over with Hamster I, chapter 1.\nIt stood at: ${was.split('\n')[0]}` }
+    return { text: `The saga starts over with Hamster I, Episode 1.\nIt stood at: ${was.split('\n')[0]}` }
   })
 
   on('command.run', { command: 'hamster-saga:debug' }, async ($, e) => {
     soloCurrent = null
-    // A chapter already on screen moves on where it came from before the switch, or it would show twice.
+    // An episode already on screen moves on where it came from before the switch, or it would show twice.
     if (soloShown !== null) {
       const key = (await $.store.get('preview')) ? 'preview' : 'progress'
       const moved = movedOn(asProgress(await $.store.get(key)), soloShown, SEASONS, await $.clock.now())
@@ -605,11 +606,11 @@ export const register: Register = on => {
     }
     if (await $.store.get('preview')) {
       await $.store.delete('preview')
-      return { text: `Preview off; the saga is back at "${chapterOf(asProgress(await $.store.get('progress'))).text}".` }
+      return { text: `Preview off; the saga is back at "${episodeOf(asProgress(await $.store.get('progress'))).text}".` }
     }
     const progress = asProgress(await $.store.get('progress'))
     await $.store.set('preview', { ...progress, pending: null, now: false })
-    return { text: `Preview on: every spinner shows the next chapter from "${chapterOf({ ...progress, pending: null }).text}". The saga itself stays put; /hamster-saga:debug again to stop.` }
+    return { text: `Preview on: every spinner shows the next episode from "${episodeOf({ ...progress, pending: null }).text}". The saga itself stays put; /hamster-saga:debug again to stop.` }
   })
 
   on('command.run', { command: 'hamster-saga:status' }, async ($, e) => {
@@ -634,7 +635,7 @@ export const register: Register = on => {
     return next(e)
   })
 
-  // Alone, the saga moves on once a chapter it drew has been on screen.
+  // Alone, the saga moves on once an episode it drew has been on screen.
   on('tool.call', async ($, e, next) => {
     soloCurrent = null
     if (soloShown !== null) {
@@ -671,7 +672,7 @@ export const register: Register = on => {
     return next(e)
   })
 
-  // Without a mod that shows the chapters, once one is due a spinner in SOLO_ODDS shows it in place of the engine's own
+  // Without a mod that shows the episodes, once one is due a spinner in SOLO_ODDS shows it in place of the engine's own
   // word; a reset's line shows at once.
   on('ui.render', { component: 'Spinner' }, async ($, e, next) => {
     const isReplaceable = e.surface === 'terminal' || (e.surface === 'desktop' && e.props.word === GENERIC)
@@ -685,13 +686,13 @@ export const register: Register = on => {
       soloCurrent = false
       const preview = await $.store.get('preview')
       const progress = asProgress(preview ?? (await $.store.get('progress')))
-      const chapter = preview ? { text: chapterOf(progress).text, urgent: true } : chapterOf(progress)
+      const episode = preview ? { text: episodeOf(progress).text, urgent: true } : episodeOf(progress)
       const buf = new Uint32Array(1)
       crypto.getRandomValues(buf)
-      if (chapter.urgent || (isDue(progress, await $.clock.now()) && (buf[0] ?? 0) % SOLO_ODDS === 0)) {
-        word = chapter.text
-        soloCurrent = chapter.text
-        soloShown = chapter.text
+      if (episode.urgent || (isDue(progress, await $.clock.now()) && (buf[0] ?? 0) % SOLO_ODDS === 0)) {
+        word = episode.text
+        soloCurrent = episode.text
+        soloShown = episode.text
       }
     }
     return word === false ? next(e) : next({ ...e, props: { ...e.props, word } })

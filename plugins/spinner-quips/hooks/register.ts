@@ -106,7 +106,7 @@ const QUIPS: Record<Category, readonly string[]> = {
     'Estimating in years', // office life
   ],
   other: [
-    'Bribing the hamster', // loading-screen classic; the hamster-saga mod's chapter slot
+    'Bribing the hamster', // loading-screen classic; the hamster-saga mod's episode slot
     'Petting the server', // dev humour
     'Waking the server elves', // dev humour
     'Loading the loading bar', // loading-screen classic
@@ -482,11 +482,11 @@ type Source = keyof typeof RANK
 // The desktop's word when the step it shows has no description of its own.
 const GENERIC = 'Working'
 
-// The quip that, drawn, shows the hamster-saga mod's chapter instead, another quip while none is due, and itself
+// The quip that, drawn, shows the hamster-saga mod's episode instead, another quip while none is due, and itself
 // while that mod is not installed.
 const HAMSTER = 'Bribing the hamster'
 
-// The same slot in every other group's bag; drawn with no chapter to show, it is drawn again.
+// The same slot in every other group's bag; drawn with no episode to show, it is drawn again.
 const SLOT = 'hamster-saga slot'
 
 let category: Category = 'other'
@@ -495,7 +495,7 @@ let current: string | null = null
 let last: string | null = null
 const bags: Partial<Record<Category, string[]>> = {}
 const topics = new Set<Topic>()
-// The saga chapter on screen, until the saga moves past it.
+// The saga episode on screen, until the saga moves past it.
 let hamsterShown: string | null = null
 // Bumped by every draw and every reset, so a draw that waited on the saga only keeps its quip when nothing came after it.
 let draws = 0
@@ -694,16 +694,16 @@ export const register: Register = on => {
     if (word === null) {
       const draw = ++draws
       word = pick(category)
-      // The saga's chapter in its slot, or at once when it answers a reset phrase; only one until the saga moves on.
+      // The saga's episode in its slot, or at once when it answers a reset phrase; only one until the saga moves on.
       if (hamsterShown === null) {
         const drawn = word
         try {
-          const chapter = await $.hamster.peek()
-          if (chapter.text !== '' && (drawn === HAMSTER || drawn === SLOT || chapter.urgent)) {
-            word = chapter.text
-            hamsterShown = chapter.text
+          const episode = await $.hamster.peek()
+          if (episode.text !== '' && (drawn === HAMSTER || drawn === SLOT || episode.urgent)) {
+            word = episode.text
+            hamsterShown = episode.text
           } else if (drawn === HAMSTER || drawn === SLOT) {
-            // The saga's next chapter is not due yet: another quip, not the slot's own line in the middle of the story.
+            // The saga's next episode is not due yet: another quip, not the slot's own line in the middle of the story.
             word = pick(category)
           }
         } catch {
