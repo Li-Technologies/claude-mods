@@ -1,6 +1,6 @@
 {
   "name": "spinner-quips",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "author": { "name": "Michał Lisowski", "email": "michal.lisowski@litechnologies.eu" },
   "license": "PolyForm-Internal-Use-1.0.0",
   "description": "Replaces the spinner's generic 'Working' with a short funny phrase that fits the task at hand",

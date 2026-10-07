@@ -20,6 +20,7 @@ const QUIPS: Record<Category, readonly string[]> = {
     'Locking chevron seven', // Stargate SG-1
     'Doom-scrolling', // internet slang
     'Digging with Krecik', // Krtek (The Little Mole)
+    'Looking for the golden ticket', // Charlie and the Chocolate Factory
   ],
   // Implementation, deploy and release.
   implement: [
@@ -62,6 +63,8 @@ const QUIPS: Record<Category, readonly string[]> = {
     'Ah sh*t, here we go again', // GTA San Andreas
     'Ordering -1 beers', // QA-walks-into-a-bar joke
     'Chasing Jerry', // Tom and Jerry
+    'Keeping my friends close and the bugs closer', // The Godfather Part II
+    'Calling Houston', // Apollo 13
   ],
   // Requirements, business analysis, solution design.
   design: [
@@ -89,6 +92,7 @@ const QUIPS: Record<Category, readonly string[]> = {
     'Talking while on mute', // video-call life
     'CC-ing the whole company', // office life
     'Ghosting the client', // internet slang
+    'Smiling and waving', // Madagascar
   ],
   // Planning and reporting: estimates, sprints, status, timelines.
   planning: [
@@ -104,6 +108,10 @@ const QUIPS: Record<Category, readonly string[]> = {
     'Discussing, but not deciding', // office life
     'Dreaming of a meeting-free Friday', // office life
     'Estimating in years', // office life
+    'Getting a bigger boat', // Jaws
+    'Awarding ten points to Gryffindor', // Harry Potter; story points
+    'Making room on the door for Jack', // Titanic
+    'Leaving Kevin home alone', // Home Alone
   ],
   other: [
     'Bribing the hamster', // loading-screen classic; the hamster-saga mod's episode slot
@@ -122,6 +130,7 @@ const QUIPS: Record<Category, readonly string[]> = {
     'Begging for more Claude tokens', // Claude usage limits
     'Shaking, not stirring', // James Bond
     'Yabba Dabba Doo', // The Flintstones
+    'Finding out why the rum is gone', // Pirates of the Caribbean
   ],
 }
 
