@@ -1,4 +1,4 @@
-import type { Register } from 'claude-code'
+import type { EngineInterface, Register } from 'claude-code'
 import type { QuipsCategory, QuipsPack } from '../types'
 import { QUIPS as WRITTEN, TOPIC_QUIPS as WRITTEN_TOPIC_QUIPS, TOPICS as WRITTEN_TOPICS, type Topic } from './quips.ts'
 
@@ -525,6 +525,40 @@ const ENGINE_PATH: readonly (readonly string[])[] = [
   ],
 ]
 
+// Refreshes the marketplace and updates this plugin through the engine's own binary, or `claude` on PATH, whichever
+// answers as Claude Code first. Resolves to the version installed afterwards ('' when it cannot be read), or null when
+// no binary answered or a step failed.
+async function updated($: EngineInterface, marketplace: string): Promise<string | null> {
+  const id = `${$.plugin.name}@${marketplace}`
+  const candidates: string[] = []
+  for (const argv of ENGINE_PATH) {
+    const found = await $.process.run(argv, { timeoutMs: 15_000 }).catch(() => null)
+    if (found?.exitCode === 0 && found.stdout.trim() !== '') {
+      candidates.push(found.stdout.trim())
+      break
+    }
+  }
+  candidates.push('claude')
+  for (const bin of candidates) {
+    const version = await $.process.run([bin, '--version'], { timeoutMs: 15_000 }).catch(() => null)
+    if (!version || version.exitCode !== 0 || !version.stdout.includes('Claude Code')) continue
+    const refreshed = await $.process.run([bin, 'plugin', 'marketplace', 'update', marketplace], { timeoutMs: 120_000 })
+    if (refreshed.exitCode !== 0) return null
+    const update = await $.process.run([bin, 'plugin', 'update', id], { timeoutMs: 120_000 })
+    if (update.exitCode !== 0) return null
+    const listed = await $.process.run([bin, 'plugin', 'list', '--json'], { timeoutMs: 15_000 }).catch(() => null)
+    try {
+      const entry = (JSON.parse(listed?.stdout ?? '') as unknown[]).find(
+        (plugin): plugin is { version: unknown } => Boolean(plugin) && typeof plugin === 'object' && (plugin as { id?: unknown }).id === id,
+      )
+      return typeof entry?.version === 'string' ? entry.version : ''
+    } catch {
+      return ''
+    }
+  }
+  return null
+}
+
 // The saga is another mod's: each call goes through its `$.hamster` noun and is skipped while that mod is not installed.
 export const register: Register = (on, options) => {
   // The `$.quips` noun: a plugin adds its pack by answering `quips.collect` with what `next` gives it plus its own.
@@ -552,28 +586,24 @@ export const register: Register = (on, options) => {
           const checked = await $.store.get('updateCheckedAt')
           if (typeof checked === 'number' && now - checked < UPDATE_EVERY) return
           await $.store.set('updateCheckedAt', now)
-          // The engine's own binary first, then `claude` on PATH; each must answer as Claude Code before it is trusted.
-          const candidates: string[] = []
-          for (const argv of ENGINE_PATH) {
-            const found = await $.process.run(argv, { timeoutMs: 15_000 }).catch(() => null)
-            if (found?.exitCode === 0 && found.stdout.trim() !== '') {
-              candidates.push(found.stdout.trim())
-              break
-            }
-          }
-          candidates.push('claude')
-          for (const bin of candidates) {
-            const version = await $.process.run([bin, '--version'], { timeoutMs: 15_000 }).catch(() => null)
-            if (!version || version.exitCode !== 0 || !version.stdout.includes('Claude Code')) continue
-            const refreshed = await $.process.run([bin, 'plugin', 'marketplace', 'update', marketplace], { timeoutMs: 120_000 })
-            if (refreshed.exitCode === 0) await $.process.run([bin, 'plugin', 'update', `${$.plugin.name}@${marketplace}`], { timeoutMs: 120_000 })
-            return
-          }
+          await updated($, marketplace)
         }
         update().catch(() => {})
       })
     }
     return result
+  })
+
+  // Updates the plugin right away, whatever the `autoUpdate` option says, and tells which version it installed.
+  on('command.run', { command: 'spinner-quips:update' }, async ($, e) => {
+    const marketplace = INSTALLED.exec($.plugin.root)?.[1]
+    if (!marketplace) return { text: `This copy of spinner-quips was not installed from a marketplace, so there is nothing to update it from.` }
+    const current = $.plugin.root.split(/[\\/]/).filter(Boolean).pop() ?? ''
+    const version = await updated($, marketplace).catch(() => null)
+    if (version === null) return { text: 'Could not update spinner-quips. Try again later, or update it from the plugin manager.' }
+    if (version === current) return { text: `spinner-quips ${current} is the latest version.` }
+    if (version === '') return { text: 'spinner-quips is up to date. If a newer version came in, run /reload-plugins to load it.' }
+    return { text: `spinner-quips updated from ${current} to ${version}. Run /reload-plugins to load it.` }
   })
 
   on('prompt.submit', async ($, e, next) => {

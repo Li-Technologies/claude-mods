@@ -32,6 +32,7 @@ They run with the same Claude Code binary as the session, so this works in the t
 
 ### Update by hand
 
+- **In a session**: `/spinner-quips:update` or `/hamster-saga:update` updates that plugin right away and says which version it installed (from spinner-quips 1.0.5 and hamster-saga 1.0.9 on).
 - **Desktop app**: **Plugins** → **Manage marketplaces** → **Check for updates** next to li-technologies, then open the plugin and press **Update**.
 - **Terminal**:
 
