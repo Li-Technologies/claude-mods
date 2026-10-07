@@ -639,8 +639,10 @@ export const register: Register = (on, options) => {
     return { text: recapped(asProgress(await $.store.get('progress'))) }
   })
 
+  // In a code block, so the surface offers to copy it; the block opens on a line of its own, below the plugin names the
+  // surface puts before the output.
   on('command.run', { command: 'hamster-saga:share' }, async ($, e) => {
-    return { text: shared(asProgress(await $.store.get('progress'))) }
+    return { text: ['Paste it anywhere:', '```text', shared(asProgress(await $.store.get('progress'))), '```'].join('\n') }
   })
 
   // Updates the plugin right away, whatever the `autoUpdate` option says, and tells which version it installed.
