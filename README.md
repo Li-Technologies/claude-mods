@@ -91,4 +91,4 @@ Each plugin follows semantic versioning in its `plugin.json`; an update reaches 
 
 ## License
 
-[CC BY-NC-ND 4.0](LICENSE): free to use, also at work and on paid projects; no selling, no charging for it, no modified versions.
+[PolyForm Internal Use 1.0.0](LICENSE), with personal use allowed as well: use the plugins for free at work, for clients and on your own projects, and change them in your own setup. Don't share copies or sell them, changed or not; to recommend them, share a link to this repository.

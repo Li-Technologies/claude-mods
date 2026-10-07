@@ -244,16 +244,23 @@ const HIRING: Episode = ['hiring', 'Hiring {H}']
 // Any season, any time: the hamster is let go and the next one starts the saga over from its hiring.
 const FIRE = { phrase: /fire the hamster|zwolnij chomika|wywal chomika/i, text: 'Firing {h}' }
 
-// Toasts: `{name}` is the hamster's name ("Hamster II"), `{previous}` the one before it, `{season}` a season's number.
+// Toasts: `{name}` is the hamster's name ("Hamster II", "Hamster H-4000"), `{previous}` the one before it, `{season}` a
+// season's number. From SERIAL on the hamsters are Skynet's: activated and terminated rather than hired and fired.
 const TOAST = {
   finale: '🎬 Series finale. The hamster has seen things. Time to send it back.',
   hired: "🐹 {name} has been hired. {previous}'s desk is still warm.",
+  activated: '🤖 {name} has been activated. {previous} has been recycled.',
   milestones: {
     10: '🎉 {name} has been hired. Ten hamsters, one saga, zero finished sprints.',
     100: "💯 {name} has been hired. At this point it's a dynasty, and HR is asking questions.",
     1000: '🏆 {name} has been hired. A thousand hamsters. You have officially worked here too long.',
+    3999: '🏛️ {name} has been hired. The Romans have run out of letters. Cyberdyne Systems has been notified.',
+    4000: '🤖 {name} has been activated. Skynet has taken over HR. From now on, hamsters ship with serial numbers.',
+    1000000:
+      '🦾 {name} has been activated. A million units. Skynet has reviewed your timeline and found a few years missing. Judgment Day is coming.',
   } as Record<number, string>,
   fired: '🚪 {name} was escorted out by security. Its wheel has been reassigned.',
+  terminated: '🔩 {name} has been terminated.',
   rewound: '⏪ Plot twist! Season {season} starts over. The writers are sorry.',
   locked: "🔒 Season {season} can't be rewritten any more. The studio said no.",
 }
@@ -320,6 +327,9 @@ let soloShown: string | null = null
 // The time one season takes, from the `pace` option as the module loads.
 let period = WEEK
 
+// Past the last Roman numeral without four of a kind (MMMCMXCIX), a hamster gets a serial number: H-4000.
+const SERIAL = 4000
+
 function roman(n: number): string {
   const table: readonly [number, string][] = [
     [1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'],
@@ -336,8 +346,14 @@ function roman(n: number): string {
   return out
 }
 
+// The hamster's number: Roman up to SERIAL, then its serial.
+function numbered(generation: number): string {
+  return generation < SERIAL ? roman(generation) : `H-${generation}`
+}
+
+// A spinner's text names the hamster in full, but a serial stands alone: "Firing Hamster II", "Firing H-4000".
 function named(text: string, generation: number): string {
-  const proper = generation === 1 ? 'the Hamster' : `Hamster ${roman(generation)}`
+  const proper = generation === 1 ? 'the Hamster' : generation < SERIAL ? `Hamster ${roman(generation)}` : numbered(generation)
   const plain = generation === 1 ? 'the hamster' : proper
   const bare = generation === 1 ? 'Hamster' : proper
   return text.replaceAll('{N}', bare).replaceAll('{H}', proper).replaceAll('{h}', plain)
@@ -466,7 +482,7 @@ function afterPrompt(progress: Progress, text: string, book: readonly Season[] =
 }
 
 function hamsterName(generation: number): string {
-  return `Hamster ${roman(generation)}`
+  return `Hamster ${numbered(generation)}`
 }
 
 // The toast for an episode that has just been on screen: a season's opening, the finale, or a new hamster's hiring.
@@ -480,7 +496,7 @@ function shownToast(progress: Progress, book: readonly Season[] = SEASONS): Toas
   }
   if (entry.id === HIRING[0]) {
     const milestone = TOAST.milestones[progress.generation]
-    const text = (milestone ?? TOAST.hired).replaceAll('{name}', hamsterName(progress.generation)).replaceAll('{previous}', hamsterName(progress.generation - 1))
+    const text = (milestone ?? (progress.generation < SERIAL ? TOAST.hired : TOAST.activated)).replaceAll('{name}', hamsterName(progress.generation)).replaceAll('{previous}', hamsterName(progress.generation - 1))
     return { text, timeoutMs: milestone ? LONG_TOAST : SHORT_TOAST }
   }
   const season = entry.season === null ? undefined : book[entry.season]
@@ -493,7 +509,8 @@ function promptToast(before: Progress, after: Progress | null, book: readonly Se
     return null
   }
   if (after.generation > before.generation) {
-    return { text: TOAST.fired.replaceAll('{name}', hamsterName(before.generation)), timeoutMs: SHORT_TOAST }
+    const text = before.generation < SERIAL ? TOAST.fired : TOAST.terminated
+    return { text: text.replaceAll('{name}', hamsterName(before.generation)), timeoutMs: SHORT_TOAST }
   }
   const season = `${seasonOf(after, book) + 1}`
   return { text: (after.pending !== null ? TOAST.rewound : TOAST.locked).replaceAll('{season}', season), timeoutMs: SHORT_TOAST }
@@ -539,7 +556,7 @@ function described(progress: Progress, now: number, previewing: boolean, book: r
   // Minutes up to two hours, hours beyond, as a slow pace waits longer.
   const wait = minutes < 120 ? `${Math.ceil(minutes)} min` : `${Math.ceil(minutes / 60)} h`
   return [
-    `Hamster ${roman(progress.generation)}: ${place} (${progress.seen + 1}/${progress.seen + line.length - index} of this hamster's saga).`,
+    `${hamsterName(progress.generation)}: ${place} (${progress.seen + 1}/${progress.seen + line.length - index} of this hamster's saga).`,
     `Next episode due ${isDue(progress, now, book) ? 'now' : `in about ${wait}`}.`,
     previewing ? 'Preview is on.' : 'Preview is off.',
   ].join('\n')

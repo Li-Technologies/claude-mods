@@ -1,8 +1,8 @@
 {
   "name": "hamster-saga",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "author": { "name": "Michał Lisowski", "email": "michal.lisowski@litechnologies.eu" },
-  "license": "CC-BY-NC-ND-4.0",
+  "license": "PolyForm-Internal-Use-1.0.0",
   "description": "Now and then a spinner tells the next episode of a hamster's long, eventful saga",
   "types": "./types/index.d.ts",
   "userConfig": {
