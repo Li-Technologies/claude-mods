@@ -1,153 +1,46 @@
 import type { Register } from 'claude-code'
+import type { QuipsCategory, QuipsPack } from '../types'
+import { QUIPS as WRITTEN, TOPIC_QUIPS as WRITTEN_TOPIC_QUIPS, TOPICS as WRITTEN_TOPICS, type Topic } from './quips.ts'
 
-type Category = 'read' | 'implement' | 'debug' | 'design' | 'comms' | 'planning' | 'other'
+type Category = QuipsCategory
+const CATEGORIES: readonly Category[] = ['read', 'implement', 'debug', 'design', 'comms', 'planning', 'other']
 
-const QUIPS: Record<Category, readonly string[]> = {
-  // Reading, checking, analysing.
-  read: [
-    'Asking the magic 8-ball', // Magic 8-Ball toy
-    "Finding the droids we're looking for", // Star Wars: A New Hope
-    'Looking for Sarah Connor', // The Terminator
-    'Taking the red pill', // The Matrix
-    'Waiting for the loot drop', // gaming: RPG loot drops
-    'Camping the spawn', // gaming: FPS spawn camping
-    'Connecting to Eywa', // Avatar
-    'Finding Nemo', // Finding Nemo
-    'Searching for my precious', // The Lord of the Rings: Gollum
-    'Watching the Truman Show', // The Truman Show
-    "Opening Pandora's box", // Greek myth
-    'Opening the Chamber of Secrets', // Harry Potter
-    'Locking chevron seven', // Stargate SG-1
-    'Doom-scrolling', // internet slang
-    'Digging with Krecik', // Krtek (The Little Mole)
-    'Looking for the golden ticket', // Charlie and the Chocolate Factory
-  ],
-  // Implementation, deploy and release.
-  implement: [
-    'Constructing additional pylons', // StarCraft
-    'Microwaving the datapack', // Vlocity datapacks
-    'Arguing with Vlocity', // Vlocity
-    'Bypassing governor limits', // Salesforce governor limits
-    'Charging the flux capacitor', // Back to the Future
-    'Hitting 88 miles per hour', // Back to the Future
-    'Leeroy Jenkins-ing it', // World of Warcraft meme
-    'Rushing B', // Counter-Strike
-    'Teabagging the compiler', // gaming: teabagging
-    'Roasting the CPU', // dev humour
-    'Hacking the mainframe', // hacker-movie cliché
-    'Planting the bomb', // Counter-Strike
-    'Typing really fast', // hacker-movie cliché
-    'Booting up Skynet', // The Terminator
-    'Uploading the virus', // Independence Day
-    'Decommissioning Mulesoft', // MuleSoft
-    'Ordering from ACME', // Looney Tunes: Wile E. Coyote
-  ],
-  // Debugging, bug fixing, testing and UAT.
-  debug: [
-    'Consulting the rubber duck', // rubber duck debugging
-    'Respawning the bugs', // gaming: respawn
-    'Nerfing the bugs', // gaming: nerf
-    'Hasta la vista-ing the bugs', // Terminator 2
-    'Untangling spaghetti', // spaghetti code
-    'Blaming the jungler', // League of Legends
-    'Dodging bullets', // The Matrix
-    'Reversing the polarity', // Doctor Who
-    'Feeding the gremlins', // Gremlins
-    'Turning it off and on again', // The IT Crowd
-    'Hunting the Predator', // Predator
-    'Calling tech support', // The IT Crowd
-    'Swearing in Polish', // Polish dev life
-    'Questioning life choices', // dev humour
-    'Asking ChatGPT', // AI humour
-    'Discovering it never worked in prod', // dev life
-    'Ah sh*t, here we go again', // GTA San Andreas
-    'Ordering -1 beers', // QA-walks-into-a-bar joke
-    'Chasing Jerry', // Tom and Jerry
-    'Keeping my friends close and the bugs closer', // The Godfather Part II
-    'Calling Houston', // Apollo 13
-  ],
-  // Requirements, business analysis, solution design.
-  design: [
-    'Calibrating the vibes', // internet slang
-    'Using the Force', // Star Wars
-    "Making an offer you can't refuse", // The Godfather
-    'Negotiating with Salesforce', // Salesforce
-    'Bending the spoon', // The Matrix
-    'Consulting Master Yoda', // Star Wars
-    'Drawing it like a French girl', // Titanic
-    'Making it legen… dary', // How I Met Your Mother
-    'Getting briefed by M', // James Bond
-    'Asking Hermione', // Harry Potter
-    'Finding inner peace', // Kung Fu Panda
-    'Mixing sugar, spice and everything nice', // The Powerpuff Girls
-  ],
-  // Documentation and communication: Jira, Confluence, mail, Slack.
-  comms: [
-    'Phoning home', // E.T.
-    'Talking to Wilson', // Cast Away
-    'Lighting the beacons', // The Lord of the Rings: The Return of the King
-    'Sending the Bat-Signal', // Batman
-    'Replying all by accident', // office life
-    'Opening hailing frequencies', // Star Trek
-    'Talking while on mute', // video-call life
-    'CC-ing the whole company', // office life
-    'Ghosting the client', // internet slang
-    'Smiling and waving', // Madagascar
-  ],
-  // Planning and reporting: estimates, sprints, status, timelines.
-  planning: [
-    'Planning the heist', // Ocean's Eleven
-    'Delegating to JARVIS', // Iron Man
-    'Briefing the minions', // Despicable Me
-    'Counting to infinity', // estimation joke
-    'Moving the deadline', // PM life
-    'Interrogating stakeholders', // PM life
-    'Promising it by Friday', // PM life
-    'Pushing it to next sprint', // Scrum life
-    'Ranking urgent A vs urgent B', // office life
-    'Discussing, but not deciding', // office life
-    'Dreaming of a meeting-free Friday', // office life
-    'Estimating in years', // office life
-    'Getting a bigger boat', // Jaws
-    'Awarding ten points to Gryffindor', // Harry Potter; story points
-    'Making room on the door for Jack', // Titanic
-    'Leaving Kevin home alone', // Home Alone
-  ],
-  other: [
-    'Bribing the hamster', // loading-screen classic; the hamster-saga mod's episode slot
-    'Petting the server', // dev humour
-    'Waking the server elves', // dev humour
-    'Loading the loading bar', // loading-screen classic
-    'Skipping the cutscene', // gaming
-    'Summoning more coffee', // dev life
-    'Doing it for the family', // Fast & Furious
-    'Going to infinity and beyond', // Toy Story
-    'Following the way', // The Mandalorian
-    'Figuring out what I really like doing', // Chłopaki nie płaczą
-    'Chewing bubble gum', // Bev
-    'Pretending to work', // office life
-    'Opening the fridge for no reason', // everyday life
-    'Begging for more Claude tokens', // Claude usage limits
-    'Shaking, not stirring', // James Bond
-    'Yabba Dabba Doo', // The Flintstones
-    'Finding out why the rum is gone', // Pirates of the Caribbean
-  ],
+// The quips as quips.ts writes them, kept to what the spinner can show: each category a list of texts, an empty one
+// when it is missing.
+function listed(written: unknown): Record<Category, readonly string[]> {
+  const raw = (written && typeof written === 'object' ? written : {}) as Record<string, unknown>
+  const texts = (value: unknown) => (Array.isArray(value) ? value : []).filter((quip): quip is string => typeof quip === 'string' && quip.trim() !== '')
+  return Object.fromEntries(CATEGORIES.map(group => [group, texts(raw[group])])) as Record<Category, readonly string[]>
 }
 
-type Topic = 'vlocity' | 'mulesoft'
+// A topic's pattern matched without the global or sticky flag, which would make it miss every other text.
+function patterned(written: unknown): readonly [Topic, RegExp][] {
+  return (Array.isArray(written) ? written : [])
+    .filter((entry): entry is [Topic, RegExp] => Array.isArray(entry) && typeof entry[0] === 'string' && entry[1] instanceof RegExp)
+    .map(([topic, pattern]) => [topic, new RegExp(pattern.source, pattern.flags.replace(/[gy]/g, ''))])
+}
 
+const BUILT_IN = listed(WRITTEN)
+
+// The built-in quips with the packs other plugins add: a pack's quips join them, its `drop` leaves some of them out and
+// its `replace` all of them; a malformed pack adds nothing.
+function combined(packs: unknown): Record<Category, readonly string[]> {
+  const valid = (Array.isArray(packs) ? packs : []).filter((pack): pack is QuipsPack => Boolean(pack) && typeof pack === 'object')
+  const dropped = new Set(valid.flatMap(pack => (Array.isArray(pack.drop) ? pack.drop : [])))
+  const replaced = valid.some(pack => pack.replace === true)
+  const added = valid.map(pack => listed(pack.quips))
+  const group = (category: Category) => {
+    const own = replaced ? [] : BUILT_IN[category].filter(quip => !dropped.has(quip))
+    return [...new Set([...own, ...added.flatMap(pack => pack[category])])]
+  }
+  return Object.fromEntries(CATEGORIES.map(category => [category, group(category)])) as Record<Category, readonly string[]>
+}
+
+// The quips drawn from: the built-in ones until the session collects the packs.
+let QUIPS = BUILT_IN
+const TOPICS = patterned(WRITTEN_TOPICS)
 // Quips that only make sense when the turn touches their topic.
-const TOPIC_QUIPS: Record<string, Topic> = {
-  'Microwaving the datapack': 'vlocity',
-  'Arguing with Vlocity': 'vlocity',
-  'Decommissioning Mulesoft': 'mulesoft',
-}
-
-// What gives a topic away in a prompt, a command or skill name, or any argument of a tool call.
-const TOPICS: readonly [Topic, RegExp][] = [
-  ['vlocity', /vlocity|omni-?(?:studio|scripts?|process)|flex-?cards?|data-?raptors?|datapacks?|integration procedures?|communications-cloud/i],
-  ['mulesoft', /(?<![a-z])mule|anypoint|(?<![a-z])raml(?![a-z])|dataweave|(?<![a-z])dwl(?![a-z])/i],
-]
+const TOPIC_QUIPS: Readonly<Record<string, Topic>> = WRITTEN_TOPIC_QUIPS && typeof WRITTEN_TOPIC_QUIPS === 'object' ? WRITTEN_TOPIC_QUIPS : {}
 
 // A whole word or a stem: no letter may touch the match on either side.
 const words = (list: readonly string[]) => new RegExp(`(?<!\\p{L})(?:${list.join('|')})(?!\\p{L})`, 'iu')
@@ -551,7 +444,7 @@ function randomIndex(n: number): number {
 }
 
 function shuffled(group: Category): string[] {
-  const bag = [...QUIPS[group], ...(group === 'other' ? [] : [SLOT])]
+  const bag = [...QUIPS[group], ...(group === 'other' || QUIPS[group].length === 0 ? [] : [SLOT])]
   for (let i = bag.length - 1; i > 0; i--) {
     const j = randomIndex(i + 1)
     const swap = bag[i] as string
@@ -613,10 +506,10 @@ function toolCategory(tool: string, call: unknown): Category | null {
   return TOOLS[name] ?? null
 }
 
-// Once a week a copy installed from the marketplace asks the engine's own binary, quietly, to refresh the marketplace and
+// Once a week a copy installed from a marketplace asks the engine's own binary, quietly, to refresh that marketplace and
 // update this plugin; the new version loads with the next session or /reload-plugins. The `autoUpdate` option turns it off.
-const MARKETPLACE = 'li-technologies'
-const INSTALLED = /[\\/]plugins[\\/]cache[\\/]li-technologies[\\/]/
+// The marketplace is the one the copy was installed from (plugins/cache/<marketplace>/<plugin>/<version>).
+const INSTALLED = /[\\/]plugins[\\/]cache[\\/]([^\\/]+)[\\/]/
 const UPDATE_EVERY = 7 * 24 * 60 * 60 * 1000
 const UPDATE_DELAY = 60 * 1000
 
@@ -634,13 +527,25 @@ const ENGINE_PATH: readonly (readonly string[])[] = [
 
 // The saga is another mod's: each call goes through its `$.hamster` noun and is skipped while that mod is not installed.
 export const register: Register = (on, options) => {
-  // Attaches to the saga, then the weekly self-update, a minute into the session so it never slows the start.
+  // The `$.quips` noun: a plugin adds its pack by answering `quips.collect` with what `next` gives it plus its own.
+  on('engine.create', async ($, e, next) => {
+    const built = await next(e)
+    return { ...built, quips: { collect: async () => [] } }
+  })
+
+  // Collects the packs and attaches to the saga, then the weekly self-update, a minute into the session so it never
+  // slows the start.
   on('session.start', async ($, e, next) => {
+    try {
+      QUIPS = combined(await $.quips.collect())
+      for (const group of CATEGORIES) delete bags[group]
+    } catch {}
     try {
       await $.hamster.attach()
     } catch {}
     const result = await next(e)
-    if (options.autoUpdate !== false && INSTALLED.test($.plugin.root)) {
+    const marketplace = INSTALLED.exec($.plugin.root)?.[1]
+    if (options.autoUpdate !== false && marketplace) {
       $.clock.after(UPDATE_DELAY, () => {
         const update = async () => {
           const now = await $.clock.now()
@@ -660,8 +565,8 @@ export const register: Register = (on, options) => {
           for (const bin of candidates) {
             const version = await $.process.run([bin, '--version'], { timeoutMs: 15_000 }).catch(() => null)
             if (!version || version.exitCode !== 0 || !version.stdout.includes('Claude Code')) continue
-            const refreshed = await $.process.run([bin, 'plugin', 'marketplace', 'update', MARKETPLACE], { timeoutMs: 120_000 })
-            if (refreshed.exitCode === 0) await $.process.run([bin, 'plugin', 'update', `spinner-quips@${MARKETPLACE}`], { timeoutMs: 120_000 })
+            const refreshed = await $.process.run([bin, 'plugin', 'marketplace', 'update', marketplace], { timeoutMs: 120_000 })
+            if (refreshed.exitCode === 0) await $.process.run([bin, 'plugin', 'update', `${$.plugin.name}@${marketplace}`], { timeoutMs: 120_000 })
             return
           }
         }

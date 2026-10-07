@@ -1,23 +1,32 @@
 import type { EngineInterface, Register } from 'claude-code'
-import type { HamsterEpisode } from '../types'
-import { FINALE, FINALE_TOAST, HIRING, SEASONS as WRITTEN, type Episode, type Season } from './story.ts'
+import type { HamsterEpisode, HamsterStory } from '../types'
+import { FINALE as WRITTEN_FINALE, FINALE_TOAST, HIRING, SEASONS as WRITTEN, type Episode, type Season } from './story.ts'
 
 // Any season, any time: the hamster is let go and the next one starts the saga over from its hiring.
 const FIRE = { phrase: /fire the hamster|zwolnij chomika|wywal chomika/i, text: 'Firing {h}' }
 
 // A phrase matched without the global or sticky flag, which would make it skip every other prompt; null when it is not
-// a phrase with a line.
+// a phrase with a line. Another plugin's phrase comes as a pattern's text, as a RegExp does not cross between plugins,
+// and is matched ignoring case.
 function phrased(value: unknown): { phrase: RegExp; text: string } | null {
   const raw = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>
-  return raw.phrase instanceof RegExp && typeof raw.text === 'string'
-    ? { phrase: new RegExp(raw.phrase.source, raw.phrase.flags.replace(/[gy]/g, '')), text: raw.text }
-    : null
+  if (typeof raw.text !== 'string') {
+    return null
+  }
+  if (raw.phrase instanceof RegExp) {
+    return { phrase: new RegExp(raw.phrase.source, raw.phrase.flags.replace(/[gy]/g, '')), text: raw.text }
+  }
+  try {
+    return typeof raw.phrase === 'string' && raw.phrase !== '' ? { phrase: new RegExp(raw.phrase, 'iu'), text: raw.text } : null
+  } catch {
+    return null
+  }
 }
 
-// The seasons as story.ts writes them, kept to what the saga can tell, so a rewritten file still runs: a season needs a
-// title and an episode; an episode a text and an id of its own, never the hiring's or the finale's.
+// The seasons as story.ts writes them, kept to what the saga can tell: a season needs a title and an episode; an
+// episode a text and an id of its own, never the hiring's or the finale's.
 function readable(written: readonly Season[]): readonly Season[] {
-  const taken = new Set<string>([HIRING[0], FINALE[0]])
+  const taken = new Set<string>([HIRING[0], WRITTEN_FINALE[0]])
   const book: Season[] = []
   for (const season of Array.isArray(written) ? written : []) {
     if (!season || typeof season.title !== 'string' || !Array.isArray(season.episodes)) continue
@@ -40,7 +49,9 @@ function readable(written: readonly Season[]): readonly Season[] {
   return book
 }
 
-const SEASONS = readable(WRITTEN)
+// The book told and its finale: the built-in ones until the session collects the stories other plugins add.
+let SEASONS = readable(WRITTEN)
+let FINALE: Episode = WRITTEN_FINALE
 
 // Where the saga is told; /hamster-saga:share links to it.
 const HOME = 'https://github.com/Li-Technologies/claude-mods'
@@ -172,6 +183,18 @@ function storyline(generation: number, book: readonly Season[] = SEASONS): reado
     ...book.flatMap((season, index) => season.episodes.map(episode => entry(episode, index))),
     entry(FINALE, null),
   ]
+}
+
+// Every story another plugin added: its seasons follow the built-in ones, or stand in for them with `replace`, and the
+// last finale line and toast given stand in for the built-in ones; a malformed story adds nothing. A saga whose episode
+// is gone from the book resumes at its place.
+function told(stories: unknown): void {
+  const valid = (Array.isArray(stories) ? stories : []).filter((story): story is HamsterStory => Boolean(story) && typeof story === 'object')
+  const added = valid.flatMap(story => (Array.isArray(story.seasons) ? story.seasons : []))
+  SEASONS = readable([...(valid.some(story => story.replace === true) ? [] : WRITTEN), ...added])
+  const last = (pick: (story: HamsterStory) => unknown) => valid.map(pick).filter((text): text is string => typeof text === 'string').pop()
+  FINALE = [WRITTEN_FINALE[0], last(story => story.finale) ?? WRITTEN_FINALE[1]]
+  TOAST.finale = last(story => story.finaleToast) ?? FINALE_TOAST
 }
 
 const START: Progress = { generation: 1, episode: (SEASONS[0]?.episodes[0] ?? FINALE)[0], index: 0, seen: 0, pending: null, now: false, spent: [], tokens: 0, tokensAt: 0 }
@@ -464,10 +487,10 @@ function shared(progress: Progress): string {
   ].join('\n')
 }
 
-// Once a week a copy installed from the marketplace asks the engine's own binary, quietly, to refresh the marketplace and
+// Once a week a copy installed from a marketplace asks the engine's own binary, quietly, to refresh that marketplace and
 // update this plugin; the new version loads with the next session or /reload-plugins. The `autoUpdate` option turns it off.
-const MARKETPLACE = 'li-technologies'
-const INSTALLED = /[\\/]plugins[\\/]cache[\\/]li-technologies[\\/]/
+// The marketplace is the one the copy was installed from (plugins/cache/<marketplace>/<plugin>/<version>).
+const INSTALLED = /[\\/]plugins[\\/]cache[\\/]([^\\/]+)[\\/]/
 const UPDATE_EVERY = 7 * 24 * 60 * 60 * 1000
 const UPDATE_DELAY = 60 * 1000
 
@@ -494,6 +517,7 @@ export const register: Register = (on, options) => {
         peek: async () => ({ text: '', urgent: false }),
         advance: async () => 0,
         attach: async () => false,
+        story: async () => [],
       },
     }
   })
@@ -588,13 +612,17 @@ export const register: Register = (on, options) => {
   // The staff record starts with the first session that has it, a hamster already at work on it from then; then the
   // weekly self-update, a minute into the session so it never slows the start.
   on('session.start', async ($, e, next) => {
+    try {
+      told(await $.hamster.story())
+    } catch {}
     const progress = asProgress(await $.store.get('progress'))
     const stored = await $.store.get('staff')
     if (!stored || (stored as Record<string, unknown>).generation !== progress.generation) {
       await $.store.set('staff', asStaff(stored, progress.generation, await $.clock.now()))
     }
     const result = await next(e)
-    if (options.autoUpdate !== false && INSTALLED.test($.plugin.root)) {
+    const marketplace = INSTALLED.exec($.plugin.root)?.[1]
+    if (options.autoUpdate !== false && marketplace) {
       $.clock.after(UPDATE_DELAY, () => {
         const update = async () => {
           const now = await $.clock.now()
@@ -614,8 +642,8 @@ export const register: Register = (on, options) => {
           for (const bin of candidates) {
             const version = await $.process.run([bin, '--version'], { timeoutMs: 15_000 }).catch(() => null)
             if (!version || version.exitCode !== 0 || !version.stdout.includes('Claude Code')) continue
-            const refreshed = await $.process.run([bin, 'plugin', 'marketplace', 'update', MARKETPLACE], { timeoutMs: 120_000 })
-            if (refreshed.exitCode === 0) await $.process.run([bin, 'plugin', 'update', `hamster-saga@${MARKETPLACE}`], { timeoutMs: 120_000 })
+            const refreshed = await $.process.run([bin, 'plugin', 'marketplace', 'update', marketplace], { timeoutMs: 120_000 })
+            if (refreshed.exitCode === 0) await $.process.run([bin, 'plugin', 'update', `${$.plugin.name}@${marketplace}`], { timeoutMs: 120_000 })
             return
           }
         }

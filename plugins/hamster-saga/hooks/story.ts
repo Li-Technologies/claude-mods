@@ -1,5 +1,5 @@
 // The whole story the saga tells: the seasons with their episodes, phrases and openings, and the finale and the hiring
-// every hamster gets. register.ts tells it; replace this file and it tells another.
+// every hamster gets. register.ts tells it.
 //
 // `{h}` is the hamster in running text ("the hamster", then "Hamster II"); `{H}` the same as a proper name
 // ("the Hamster"); `{N}` its bare name, to open a line ("Hamster", then "Hamster II").
@@ -7,16 +7,10 @@
 // Progress is kept by episode id, so the book can grow and its texts change without losing anyone's place:
 // an id never changes and is never reused; a new episode, anywhere, takes a new one (`lotr-08a` between 08 and 09).
 // An episode added before the current one waits for the next hamster; one added after it comes up as usual.
-export type Episode = readonly [id: string, text: string]
+import type { HamsterEntry, HamsterSeason } from '../types'
 
-export type Season = {
-  title: string
-  // A phrase in a prompt that sends the season back to its first episode, and what the spinner says then.
-  reset?: { phrase: RegExp; text: string }
-  // The toast once the season's first episode has been on screen; none for the first season, to keep it a surprise.
-  opening?: string
-  episodes: readonly Episode[]
-}
+export type Episode = HamsterEntry
+export type Season = HamsterSeason
 
 export const SEASONS: readonly Season[] = [
   {
