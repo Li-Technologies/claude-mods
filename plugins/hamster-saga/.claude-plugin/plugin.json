@@ -1,6 +1,6 @@
 {
   "name": "hamster-saga",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "author": { "name": "Michał Lisowski", "email": "michal.lisowski@litechnologies.eu" },
   "license": "PolyForm-Internal-Use-1.0.0",
   "description": "Now and then a spinner tells the next episode of a hamster's long, eventful saga",
