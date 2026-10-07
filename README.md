@@ -7,7 +7,7 @@ Small mods for [Claude Code](https://claude.com/claude-code), published as the `
 | **spinner-quips** | Replaces the spinner's generic "Working" with a short funny phrase that fits what Claude is doing: reading, implementing, debugging, designing, writing or planning. |
 | **hamster-saga** | Now and then a spinner tells the next episode of a hamster's long and eventful saga. |
 
-Both are function-hook plugins: they run inside Claude Code itself, in the terminal and in the desktop app's Code tab. Built and tested on Claude Code 2.1.289.
+Both are function-hook plugins: they run inside Claude Code itself, in the terminal and in the desktop app's Code tab. Built and tested on Claude Code 2.1.286 to 2.1.292.
 
 ## Install
 
@@ -21,23 +21,14 @@ Install either one or both. Inside a session, `/plugin marketplace add li-techno
 
 ## Updates
 
-Each plugin's version only changes when there is something new, and an update reaches you only through a new version.
+Both plugins keep themselves up to date. Once a week, about a minute into a session, each one quietly asks Claude Code to refresh this marketplace and install its own newer version, if there is one:
 
-### Turn on auto-update (recommended)
+```bash
+claude plugin marketplace update li-technologies
+claude plugin update <plugin>@li-technologies
+```
 
-Auto-update is **off** by default for marketplaces outside Anthropic, and a marketplace cannot switch it on for you. Turn it on once and Claude Code checks for new versions in the background after a session starts.
-
-- **Settings file** (works everywhere, including the desktop app): after installing, run
-
-  ```bash
-  jq '.extraKnownMarketplaces["li-technologies"].autoUpdate = true' ~/.claude/settings.json > ~/.claude/settings.json.tmp && mv ~/.claude/settings.json.tmp ~/.claude/settings.json
-  ```
-
-  or simply ask Claude: *"turn on auto-update for the li-technologies plugin marketplace"*. Either way the `li-technologies` entry under `extraKnownMarketplaces` in `~/.claude/settings.json` gets `"autoUpdate": true`.
-- **Terminal**: `/plugin` → **Marketplaces** → **li-technologies** → **Enable auto-update**.
-- **Organisations** can set the same `autoUpdate` key in managed settings for everyone.
-
-The desktop app has no auto-update switch, so use the settings file there.
+They run with the same Claude Code binary as the session, so this works in the terminal and in the desktop app. There is no message; the new version loads with the next session or `/reload-plugins`. An install from before self-updating existed needs one update by hand. To turn it off, switch the plugin's **Update automatically** option off (see [Options](#options)).
 
 ### Update by hand
 
@@ -52,6 +43,27 @@ The desktop app has no auto-update switch, so use the settings file there.
 
 Then start a new session or run `/reload-plugins`.
 
+## Options
+
+| Plugin | Option | Default | Values |
+| --- | --- | --- | --- |
+| spinner-quips | **Update automatically** (`autoUpdate`) | on | on, off |
+| hamster-saga | **Pace** (`pace`) | a season a week | a season a day, a season every three days, a season a week, a season every two weeks, a season a month |
+| hamster-saga | **Update automatically** (`autoUpdate`) | on | on, off |
+
+In the terminal, `/config` lists them. Anywhere, including the desktop app, they live under `pluginConfigs` in `~/.claude/settings.json`, keyed by `<plugin>@li-technologies`:
+
+```json
+{
+  "pluginConfigs": {
+    "hamster-saga@li-technologies": { "options": { "pace": "a season every two weeks" } },
+    "spinner-quips@li-technologies": { "options": { "autoUpdate": false } }
+  }
+}
+```
+
+Or ask Claude: *"set the hamster-saga pace to a season every two weeks"*. A change applies from the next session or `/reload-plugins`.
+
 ## spinner-quips
 
 - In the terminal every spinner gets a quip; in the desktop app only the generic "Working" is replaced, so Claude's own task-specific words stay.
@@ -60,7 +72,7 @@ Then start a new session or run `/reload-plugins`.
 
 ## hamster-saga
 
-A hamster joins the team. What happens next is told one spinner at a time, an episode every so often, so the story unfolds over weeks rather than minutes. No spoilers here.
+A hamster joins the team. What happens next is told one spinner at a time, an episode every so often, so the story unfolds over weeks rather than minutes (the **Pace** option sets how many). No spoilers here.
 
 - Works on its own: an occasional spinner shows the next episode.
 - With **spinner-quips** installed too, the saga takes a slot in the quip rotation instead.

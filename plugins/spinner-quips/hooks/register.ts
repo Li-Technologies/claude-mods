@@ -604,13 +604,62 @@ function toolCategory(tool: string, call: unknown): Category | null {
   return TOOLS[name] ?? null
 }
 
+// Once a week a copy installed from the marketplace asks the engine's own binary, quietly, to refresh the marketplace and
+// update this plugin; the new version loads with the next session or /reload-plugins. The `autoUpdate` option turns it off.
+const MARKETPLACE = 'li-technologies'
+const INSTALLED = /[\\/]plugins[\\/]cache[\\/]li-technologies[\\/]/
+const UPDATE_EVERY = 7 * 24 * 60 * 60 * 1000
+const UPDATE_DELAY = 60 * 1000
+
+// The engine is the parent of a process this module starts: its path on macOS and Linux, then on Windows.
+const ENGINE_PATH: readonly (readonly string[])[] = [
+  ['/bin/sh', '-c', 'if [ -r /proc/$PPID/exe ]; then readlink /proc/$PPID/exe; else ps -o comm= -p $PPID; fi'],
+  [
+    'powershell.exe',
+    '-NoProfile',
+    '-NonInteractive',
+    '-Command',
+    '$me = Get-CimInstance Win32_Process -Filter "ProcessId=$PID"; (Get-CimInstance Win32_Process -Filter "ProcessId=$($me.ParentProcessId)").ExecutablePath',
+  ],
+]
+
 // The saga is another mod's: each call goes through its `$.hamster` noun and is skipped while that mod is not installed.
-export const register: Register = on => {
+export const register: Register = (on, options) => {
+  // Attaches to the saga, then the weekly self-update, a minute into the session so it never slows the start.
   on('session.start', async ($, e, next) => {
     try {
       await $.hamster.attach()
     } catch {}
-    return next(e)
+    const result = await next(e)
+    if (options.autoUpdate !== false && INSTALLED.test($.plugin.root)) {
+      $.clock.after(UPDATE_DELAY, () => {
+        const update = async () => {
+          const now = await $.clock.now()
+          const checked = await $.store.get('updateCheckedAt')
+          if (typeof checked === 'number' && now - checked < UPDATE_EVERY) return
+          await $.store.set('updateCheckedAt', now)
+          // The engine's own binary first, then `claude` on PATH; each must answer as Claude Code before it is trusted.
+          const candidates: string[] = []
+          for (const argv of ENGINE_PATH) {
+            const found = await $.process.run(argv, { timeoutMs: 15_000 }).catch(() => null)
+            if (found?.exitCode === 0 && found.stdout.trim() !== '') {
+              candidates.push(found.stdout.trim())
+              break
+            }
+          }
+          candidates.push('claude')
+          for (const bin of candidates) {
+            const version = await $.process.run([bin, '--version'], { timeoutMs: 15_000 }).catch(() => null)
+            if (!version || version.exitCode !== 0 || !version.stdout.includes('Claude Code')) continue
+            const refreshed = await $.process.run([bin, 'plugin', 'marketplace', 'update', MARKETPLACE], { timeoutMs: 120_000 })
+            if (refreshed.exitCode === 0) await $.process.run([bin, 'plugin', 'update', `spinner-quips@${MARKETPLACE}`], { timeoutMs: 120_000 })
+            return
+          }
+        }
+        update().catch(() => {})
+      })
+    }
+    return result
   })
 
   on('prompt.submit', async ($, e, next) => {

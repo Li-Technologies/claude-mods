@@ -1,1 +1,15 @@
-{ "name": "spinner-quips", "version": "1.0.1", "author": { "name": "Michał Lisowski", "email": "michal.lisowski@litechnologies.eu" }, "license": "CC-BY-NC-ND-4.0", "description": "Replaces the spinner's generic 'Working' with a short funny phrase that fits the task at hand" }
+{
+  "name": "spinner-quips",
+  "version": "1.0.2",
+  "author": { "name": "Michał Lisowski", "email": "michal.lisowski@litechnologies.eu" },
+  "license": "CC-BY-NC-ND-4.0",
+  "description": "Replaces the spinner's generic 'Working' with a short funny phrase that fits the task at hand",
+  "userConfig": {
+    "autoUpdate": {
+      "type": "boolean",
+      "title": "Update automatically",
+      "description": "Once a week, quietly installs a newer version from the li-technologies marketplace. It loads with the next session or /reload-plugins.",
+      "default": true
+    }
+  }
+}

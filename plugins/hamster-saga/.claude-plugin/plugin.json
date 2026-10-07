@@ -1,1 +1,23 @@
-{ "name": "hamster-saga", "version": "1.0.4", "author": { "name": "Michał Lisowski", "email": "michal.lisowski@litechnologies.eu" }, "license": "CC-BY-NC-ND-4.0", "description": "Now and then a spinner tells the next episode of a hamster's long, eventful saga", "types": "./types/index.d.ts" }
+{
+  "name": "hamster-saga",
+  "version": "1.0.5",
+  "author": { "name": "Michał Lisowski", "email": "michal.lisowski@litechnologies.eu" },
+  "license": "CC-BY-NC-ND-4.0",
+  "description": "Now and then a spinner tells the next episode of a hamster's long, eventful saga",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "pace": {
+      "type": "string",
+      "title": "Pace",
+      "description": "How fast the saga moves: about one season per this much time, however much or little you work.",
+      "options": ["a season a day", "a season every three days", "a season a week", "a season every two weeks", "a season a month"],
+      "default": "a season a week"
+    },
+    "autoUpdate": {
+      "type": "boolean",
+      "title": "Update automatically",
+      "description": "Once a week, quietly installs a newer version from the li-technologies marketplace. It loads with the next session or /reload-plugins.",
+      "default": true
+    }
+  }
+}

@@ -268,10 +268,18 @@ const SEASON_RESETS = 2
 // How often a spinner shows a due episode while no other mod shows them.
 const SOLO_ODDS = 10
 
-// About one season a week, however much or little one works: episodes are paid from a bucket that refills at the current
-// season's length per week, nights and weekends included, and holds up to BURST_DAYS of that, so a Monday catches up on
-// the weekend; MIN_GAP apart at the closest, so catching up never comes as a burst.
-const WEEK = 7 * 24 * 60 * 60 * 1000
+// About one season per `period` (the `pace` option, a week by default), however much or little one works: episodes are
+// paid from a bucket that refills at the current season's length per period, nights and weekends included, and holds up to
+// BURST_DAYS of that, so a Monday catches up on the weekend; MIN_GAP apart at the closest, so catching up never comes as a burst.
+const DAY = 24 * 60 * 60 * 1000
+const WEEK = 7 * DAY
+const PACES: Record<string, number> = {
+  'a season a day': DAY,
+  'a season every three days': 3 * DAY,
+  'a season a week': WEEK,
+  'a season every two weeks': 2 * WEEK,
+  'a season a month': 30 * DAY,
+}
 const BURST_DAYS = 3
 const MIN_GAP = 15 * 60 * 1000
 
@@ -308,6 +316,9 @@ type Entry = {
 let attached = false
 let soloCurrent: string | false | null = null
 let soloShown: string | null = null
+
+// The time one season takes, from the `pace` option as the module loads.
+let period = WEEK
 
 function roman(n: number): string {
   const table: readonly [number, string][] = [
@@ -396,11 +407,11 @@ function seasonOf(progress: Progress, book: readonly Season[]): number {
   return entry.season ?? (entry.id === HIRING[0] ? 0 : book.length - 1)
 }
 
-// What the bucket holds `now`: refilled since `tokensAt` at the season's length per week, up to BURST_DAYS of that.
+// What the bucket holds `now`: refilled since `tokensAt` at the season's length per period, up to BURST_DAYS of that.
 function available(progress: Progress, now: number, book: readonly Season[]): number {
-  const perWeek = book[seasonOf(progress, book)]?.episodes.length ?? 1
-  const capacity = Math.max(1, (perWeek * BURST_DAYS) / 7)
-  return Math.min(capacity, progress.tokens + (Math.max(0, now - progress.tokensAt) * perWeek) / WEEK)
+  const perPeriod = book[seasonOf(progress, book)]?.episodes.length ?? 1
+  const capacity = Math.max(1, (perPeriod * BURST_DAYS * DAY) / period)
+  return Math.min(capacity, progress.tokens + (Math.max(0, now - progress.tokensAt) * perPeriod) / period)
 }
 
 // Whether the next episode may show `now`: a reset's line always, any other while the bucket holds one and the last
@@ -522,17 +533,40 @@ function described(progress: Progress, now: number, previewing: boolean, book: r
     entry.season === null
       ? entry.id === HIRING[0] ? 'the hiring' : 'the finale'
       : `Season ${seasonIndex + 1} "${season.title}", Episode ${season.episodes.findIndex(episode => episode[0] === entry.id) + 1}/${season.episodes.length}`
-  const perWeek = season.episodes.length
+  const perPeriod = season.episodes.length
   const left = available(progress, now, book)
-  const minutes = Math.max(((1 - left) * WEEK) / perWeek, MIN_GAP - (now - progress.tokensAt), 0) / 60000
+  const minutes = Math.max(((1 - left) * period) / perPeriod, MIN_GAP - (now - progress.tokensAt), 0) / 60000
+  // Minutes up to two hours, hours beyond, as a slow pace waits longer.
+  const wait = minutes < 120 ? `${Math.ceil(minutes)} min` : `${Math.ceil(minutes / 60)} h`
   return [
     `Hamster ${roman(progress.generation)}: ${place} (${progress.seen + 1}/${progress.seen + line.length - index} of this hamster's saga).`,
-    `Next episode due ${isDue(progress, now, book) ? 'now' : `in about ${Math.ceil(minutes)} min`}.`,
+    `Next episode due ${isDue(progress, now, book) ? 'now' : `in about ${wait}`}.`,
     previewing ? 'Preview is on.' : 'Preview is off.',
   ].join('\n')
 }
 
-export const register: Register = on => {
+// Once a week a copy installed from the marketplace asks the engine's own binary, quietly, to refresh the marketplace and
+// update this plugin; the new version loads with the next session or /reload-plugins. The `autoUpdate` option turns it off.
+const MARKETPLACE = 'li-technologies'
+const INSTALLED = /[\\/]plugins[\\/]cache[\\/]li-technologies[\\/]/
+const UPDATE_EVERY = 7 * 24 * 60 * 60 * 1000
+const UPDATE_DELAY = 60 * 1000
+
+// The engine is the parent of a process this module starts: its path on macOS and Linux, then on Windows.
+const ENGINE_PATH: readonly (readonly string[])[] = [
+  ['/bin/sh', '-c', 'if [ -r /proc/$PPID/exe ]; then readlink /proc/$PPID/exe; else ps -o comm= -p $PPID; fi'],
+  [
+    'powershell.exe',
+    '-NoProfile',
+    '-NonInteractive',
+    '-Command',
+    '$me = Get-CimInstance Win32_Process -Filter "ProcessId=$PID"; (Get-CimInstance Win32_Process -Filter "ProcessId=$($me.ParentProcessId)").ExecutablePath',
+  ],
+]
+
+export const register: Register = (on, options) => {
+  period = PACES[String(options.pace)] ?? WEEK
+
   on('engine.create', async ($, e, next) => {
     const built = await next(e)
     return {
@@ -616,6 +650,40 @@ export const register: Register = on => {
   on('command.run', { command: 'hamster-saga:status' }, async ($, e) => {
     const previewing = Boolean(await $.store.get('preview'))
     return { text: described(asProgress(await $.store.get('progress')), await $.clock.now(), previewing) }
+  })
+
+  // The weekly self-update, a minute into the session so it never slows the start.
+  on('session.start', async ($, e, next) => {
+    const result = await next(e)
+    if (options.autoUpdate !== false && INSTALLED.test($.plugin.root)) {
+      $.clock.after(UPDATE_DELAY, () => {
+        const update = async () => {
+          const now = await $.clock.now()
+          const checked = await $.store.get('updateCheckedAt')
+          if (typeof checked === 'number' && now - checked < UPDATE_EVERY) return
+          await $.store.set('updateCheckedAt', now)
+          // The engine's own binary first, then `claude` on PATH; each must answer as Claude Code before it is trusted.
+          const candidates: string[] = []
+          for (const argv of ENGINE_PATH) {
+            const found = await $.process.run(argv, { timeoutMs: 15_000 }).catch(() => null)
+            if (found?.exitCode === 0 && found.stdout.trim() !== '') {
+              candidates.push(found.stdout.trim())
+              break
+            }
+          }
+          candidates.push('claude')
+          for (const bin of candidates) {
+            const version = await $.process.run([bin, '--version'], { timeoutMs: 15_000 }).catch(() => null)
+            if (!version || version.exitCode !== 0 || !version.stdout.includes('Claude Code')) continue
+            const refreshed = await $.process.run([bin, 'plugin', 'marketplace', 'update', MARKETPLACE], { timeoutMs: 120_000 })
+            if (refreshed.exitCode === 0) await $.process.run([bin, 'plugin', 'update', `hamster-saga@${MARKETPLACE}`], { timeoutMs: 120_000 })
+            return
+          }
+        }
+        update().catch(() => {})
+      })
+    }
+    return result
   })
 
   on('hamster.attach', async ($, e, next) => {
