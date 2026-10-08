@@ -41,6 +41,11 @@ export const QUIPS: Record<Category, readonly string[]> = {
     'Uploading the virus', // Independence Day
     'Decommissioning Mulesoft', // MuleSoft
     'Ordering from ACME', // Looney Tunes: Wile E. Coyote
+    'Tipping the server $10,000', // MrBeast: tipping waiters
+    'Recreating Squid Game in staging', // MrBeast: Squid Game in real life
+    "Building the world's largest if-statement", // MrBeast: World's Largest …
+    'Hiding $1,000,000 in the codebase', // MrBeast: hide and seek for $1,000,000
+    'Buying everything on the AppExchange', // MrBeast: I Bought Everything in a Store
   ],
   // Debugging, bug fixing, testing and UAT.
   debug: [
@@ -65,6 +70,10 @@ export const QUIPS: Record<Category, readonly string[]> = {
     'Chasing Jerry', // Tom and Jerry
     'Keeping my friends close and the bugs closer', // The Godfather Part II
     'Calling Houston', // Apollo 13
+    'Posting the apology video', // YouTube apology videos
+    'Giving $10,000 to whoever finds the bug', // MrBeast
+    'Unleashing the spider dog', // Wardęga: Mutant Giant Spider Dog
+    'Paying a stranger $100,000 to read the logs', // MrBeast: paying strangers for odd tasks
   ],
   // Requirements, business analysis, solution design.
   design: [
@@ -80,6 +89,7 @@ export const QUIPS: Record<Category, readonly string[]> = {
     'Asking Hermione', // Harry Potter
     'Finding inner peace', // Kung Fu Panda
     'Mixing sugar, spice and everything nice', // The Powerpuff Girls
+    'Comparing the $1 fix with the $1,000,000 one', // MrBeast: $1 vs $1,000,000
   ],
   // Documentation and communication: Jira, Confluence, mail, Slack.
   comms: [
@@ -131,6 +141,7 @@ export const QUIPS: Record<Category, readonly string[]> = {
     'Shaking, not stirring', // James Bond
     'Yabba Dabba Doo', // The Flintstones
     'Finding out why the rum is gone', // Pirates of the Caribbean
+    'Using code CLAUDE for 10% off', // influencer promo codes
   ],
 }
 
