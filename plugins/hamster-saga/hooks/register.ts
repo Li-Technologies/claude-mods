@@ -628,15 +628,16 @@ export const register: Register = (on, options) => {
     return { text: `Preview on: every spinner shows the next episode from "${episodeOf({ ...progress, pending: null }).text}". The saga itself stays put; /hamster-saga:debug again to stop.` }
   })
 
+  // Status and recap start on a line of their own, below the plugin names the surface puts before the output.
   on('command.run', { command: 'hamster-saga:status' }, async ($, e) => {
     const previewing = Boolean(await $.store.get('preview'))
     const progress = asProgress(await $.store.get('progress'))
     const now = await $.clock.now()
-    return { text: described(progress, now, previewing, SEASONS, asStaff(await $.store.get('staff'), progress.generation, now)) }
+    return { text: `\n${described(progress, now, previewing, SEASONS, asStaff(await $.store.get('staff'), progress.generation, now))}` }
   })
 
   on('command.run', { command: 'hamster-saga:recap' }, async ($, e) => {
-    return { text: recapped(asProgress(await $.store.get('progress'))) }
+    return { text: `\n${recapped(asProgress(await $.store.get('progress')))}` }
   })
 
   // In a code block, so the surface offers to copy it; the block opens on a line of its own, below the plugin names the
