@@ -6,8 +6,9 @@ Small mods for [Claude Code](https://claude.com/claude-code), published as the `
 | --- | --- |
 | **spinner-quips** | Replaces the spinner's generic "Working" with a short funny phrase that fits what Claude is doing: reading, implementing, debugging, designing, writing or planning. |
 | **hamster-saga** | Now and then a spinner tells the next episode of a hamster's long and eventful saga. |
+| **context-line** | A band above the prompt with the folder, the branch and a bar showing how much of the context window is used; hover it for exact figures and a Compact button. |
 
-Both are function-hook plugins: they run inside Claude Code itself, in the terminal and in the desktop app's Code tab. Built and tested on Claude Code 2.1.286 to 2.1.292.
+They are function-hook plugins: they run inside Claude Code itself, in the terminal and in the desktop app's Code tab. Built and tested on Claude Code 2.1.286 to 2.1.292 (context-line on 2.1.299).
 
 ## Install
 
@@ -15,13 +16,14 @@ Both are function-hook plugins: they run inside Claude Code itself, in the termi
 claude plugin marketplace add li-technologies/claude-mods
 claude plugin install spinner-quips@li-technologies
 claude plugin install hamster-saga@li-technologies
+claude plugin install context-line@li-technologies
 ```
 
-Install either one or both. Inside a session, `/plugin marketplace add li-technologies/claude-mods` and `/plugin install …` do the same. New sessions pick the plugins up; in a running one, run `/reload-plugins`.
+Install any of them. Inside a session, `/plugin marketplace add li-technologies/claude-mods` and `/plugin install …` do the same. New sessions pick the plugins up; in a running one, run `/reload-plugins`.
 
 ## Updates
 
-Both plugins keep themselves up to date. Once a week, about a minute into a session, each one quietly asks Claude Code to refresh this marketplace and install its own newer version, if there is one:
+spinner-quips and hamster-saga keep themselves up to date; context-line does not, so update it by hand (below). Once a week, about a minute into a session, each one quietly asks Claude Code to refresh this marketplace and install its own newer version, if there is one:
 
 ```bash
 claude plugin marketplace update li-technologies
@@ -32,7 +34,7 @@ They run with the same Claude Code binary as the session, so this works in the t
 
 ### Update by hand
 
-- **In a session**: `/spinner-quips:update` or `/hamster-saga:update` updates that plugin right away and says which version it installed (from spinner-quips 1.0.5 and hamster-saga 1.0.9 on).
+- **In a session**: `/spinner-quips:update` or `/hamster-saga:update` updates that plugin right away and says which version it installed (from spinner-quips 1.0.5 and hamster-saga 1.0.9 on). context-line has no such command; use one of the two routes below.
 - **Desktop app**: **Plugins** → **Manage marketplaces** → **Check for updates** next to li-technologies, then open the plugin and press **Update**.
 - **Terminal**:
 
@@ -40,6 +42,7 @@ They run with the same Claude Code binary as the session, so this works in the t
   claude plugin marketplace update li-technologies
   claude plugin update spinner-quips@li-technologies
   claude plugin update hamster-saga@li-technologies
+  claude plugin update context-line@li-technologies
   ```
 
 Then start a new session or run `/reload-plugins`.
@@ -80,15 +83,23 @@ A hamster joins the team. What happens next is told one spinner at a time, an ep
 - Progress is kept between sessions.
 - `/hamster-saga:status` shows where the story stands and the hamster's employee record, `/hamster-saga:recap` the episodes of this season so far, and `/hamster-saga:share` a line to share it, spoiler-free. The other `/hamster-saga:…` commands are there if you want to peek, but the story is better unspoiled.
 
+## context-line
+
+- A band above the prompt: the folder and the branch on the left, a bar and the percent of the context window used on the right. The bar is blue, amber from 70% and red from 90%.
+- Hover the bar or the percent to see the exact figures (for example `Context  106.5k / 500.0k`) and a **Compact** button. One press runs `/compact` and the band shows the outcome; while a turn is running it asks you to wait.
+- The figure is the one the desktop app's Context card shows, and it keeps up after a `/compact` too.
+- A terminal has no pointer, so there the figures and the button stay visible and the bar is drawn in block characters.
+- Tested on Claude Code 2.1.299 and in the desktop app's Code tab.
+
 ## Versioning
 
 Each plugin follows semantic versioning in its `plugin.json`; an update reaches you only when the version changes.
 
-| Bump | spinner-quips | hamster-saga |
-| --- | --- | --- |
-| patch `x.y.Z` | quip text changes, new quips | small fixes, episode text tweaks |
-| minor `x.Y.0` | new categories, small behaviour changes | new seasons and new content |
-| major `X.0.0` | behaviour changes, e.g. drawing something new | behaviour changes, e.g. drawing something new |
+| Bump | spinner-quips | hamster-saga | context-line |
+| --- | --- | --- | --- |
+| patch `x.y.Z` | quip text changes, new quips | small fixes, episode text tweaks | small fixes |
+| minor `x.Y.0` | new categories, small behaviour changes | new seasons and new content | new things in the band |
+| major `X.0.0` | behaviour changes, e.g. drawing something new | behaviour changes, e.g. drawing something new | behaviour changes |
 
 ## License
 

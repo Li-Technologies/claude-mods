@@ -1,0 +1,8 @@
+{
+  "name": "context-line",
+  "version": "1.0.0",
+  "author": { "name": "Michał Lisowski", "email": "michal.lisowski@litechnologies.eu" },
+  "license": "PolyForm-Internal-Use-1.0.0",
+  "description": "Always-visible context usage above the prompt: a bar and percent, with exact figures and a Compact button on hover",
+  "types": "./types/index.d.ts"
+}

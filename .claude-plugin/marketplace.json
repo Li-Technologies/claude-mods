@@ -2,7 +2,7 @@
   "name": "li-technologies",
   "owner": { "name": "Michał Lisowski", "email": "michal.lisowski@litechnologies.eu", "url": "https://github.com/Li-Technologies" },
   "metadata": {
-    "description": "Small mods for Claude Code: spinner humour and a hamster with a career",
+    "description": "Small mods for Claude Code: spinner humour, a hamster with a career and a context meter",
     "version": "1.0.0",
     "pluginRoot": "./plugins"
   },
@@ -34,6 +34,20 @@
       "category": "fun",
       "keywords": ["spinner", "hamster", "story", "easter egg"],
       "tags": ["fun", "spinner"],
+      "strict": true
+    },
+    {
+      "name": "context-line",
+      "displayName": "Context Line",
+      "source": "context-line",
+      "description": "Always-visible context usage above the prompt: a bar and percent, with exact figures and a Compact button on hover",
+      "author": { "name": "Michał Lisowski", "email": "michal.lisowski@litechnologies.eu" },
+      "homepage": "https://github.com/Li-Technologies/claude-mods#context-line",
+      "repository": "https://github.com/Li-Technologies/claude-mods",
+      "license": "PolyForm-Internal-Use-1.0.0",
+      "category": "productivity",
+      "keywords": ["context", "usage", "compact", "status"],
+      "tags": ["productivity", "context"],
       "strict": true
     }
   ]
